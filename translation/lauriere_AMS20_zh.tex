@@ -1,0 +1,2909 @@
+
+\documentclass{amsproc}
+\usepackage[UTF8]{ctex}
+\usepackage{enumitem}
+
+
+
+
+
+
+
+
+
+
+
+
+\usepackage{empheq}
+
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\SetCommentSty{mycommfont}
+\SetKwInput{KwInput}{输入}         
+\SetKwInput{KwOutput}{输出}              %
+
+\usepackage{subcaption} %
+
+\usepackage[hidelinks]{hyperref}
+
+\usepackage{mathtools,cases} %
+
+\usepackage{stmaryrd} %
+
+
+
+
+\newtheorem{theorem}{定理}[section]
+\newtheorem{lemma}[theorem]{引理}
+\newtheorem{proposition}[theorem]{命题}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定义}
+\newtheorem{example}[theorem]{例}
+\newtheorem{xca}[theorem]{练习}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{注}
+
+\numberwithin{equation}{section}
+
+
+\newcommand{\EE}{{\mathbb E}}
+\newcommand{\RR}{{\mathbb R}}
+\newcommand{\TT}{{\mathbb T}}
+\newcommand{\ZZ}{{\mathbb Z}}
+
+
+\newcommand{\bF}{{\mathbf F}}
+\newcommand{\bG}{{\mathbf G}}
+\newcommand{\bJ}{{\mathbf J}}
+\newcommand{\bN}{{\mathbf N}}
+
+\newcommand{\cA}{{\mathcal A}}
+\newcommand{\cB}{{\mathcal B}}
+\newcommand{\cE}{{\mathcal E}}
+\newcommand{\cF}{{\mathcal F}}
+\newcommand{\cG}{{\mathcal G}}
+\newcommand{\cJ}{{\mathcal J}}
+\newcommand{\cK}{{\mathcal K}}
+\newcommand{\cL}{{\mathcal L}}
+\newcommand{\cM}{{\mathcal M}}
+\newcommand{\cP}{{\mathcal P}}
+\newcommand{\cU}{{\mathcal U}}
+\newcommand{\cW}{{\mathcal W}}
+\newcommand{\cZ}{{\mathcal Z}}
+
+\newcommand{\Ker}{\mathrm{Ker}}
+\newcommand{\Id}{\mathrm{Id}}
+
+
+
+\newcommand{\matA}{\mathbf{A}}
+\newcommand{\matM}{\mathbf{M}}
+\newcommand{\matB}{\mathbf{B}}
+
+
+\newcommand{\ctrl}{\alpha}
+\newcommand{\ctrldim}{k}
+\newcommand{\dom}{\mathcal{Q}}
+\newcommand{\domT}{\mathcal{Q}_{T}}
+
+
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argsup}{arg\,sup}
+\DeclareMathOperator*{\arginf}{arg\,inf}
+\newcommand{\prox}{\mathrm{prox}}
+\newcommand{\diver}{\mathrm{div}}
+\newcommand{\grad}{\nabla}
+\newcommand{\indic}{\mathbf{1}}
+
+
+
+
+
+
+\makeindex
+
+
+\begin{document}\title[平均场博弈与平均场控制的数值方法]{平均场博弈与平均场型控制的数值方法}
+
+
+\author{Mathieu Lauri{\`e}re}
+\address{普林斯顿大学运筹学与金融工程系（ORFE），Sherrerd Hall，美国新泽西州普林斯顿}
+\curraddr{}
+\email{lauriere@princeton.edu}
+\thanks{作者得到了 NSF DMS-1716673 和 ARO W911NF-17-1-0578 的部分资助。}
+
+
+\subjclass[2000]{主要分类 91--08, 91A13, 93E20, 91A23}
+
+\date{}
+
+\begin{abstract}
+平均场博弈（MFG）被提出用于处理具有大量竞争参与者的博弈。考虑参与者数量趋于无穷的极限，通过考察一个典型参与者与总体分布之间的相互作用来研究纳什均衡。参与者进行合作的情形对应于平均场控制（MFC）问题，这类问题也可以视为由 McKean-Vlasov 动力学驱动的最优控制问题。这两类问题具有广泛的潜在应用；由于大多数模型不存在解析解，数值方法在其中发挥着关键作用。在这些讲义中，我们将综述平均场博弈与平均场控制数值方法的若干方面。首先，我们在一个基本的线性--二次框架下介绍一些启发式思路。随后，我们讨论偏微分方程（PDE）前向--后向系统的数值格式、由 Fokker--Planck/Kolmogorov 偏微分方程驱动的变分问题的优化技术、基于单调算子观点的方法，以及依赖机器学习工具的随机方法。
+\end{abstract}
+
+\maketitle
+
+
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+
+
+
+
+
+
+
+这些讲义是对 2020 年 1 月 13--14 日 AMS 平均场博弈短期课程的补充，旨在介绍平均场博弈的数值方法。另见 AMS 平均场博弈短期课程的其他论文集~\cite{carmona-AMS-tmp,delarue-AMS-tmp,gravesmalhame-AMS-tmp,lacker-AMS-tmp,ramanan-AMS-tmp}。
+
+
+
+
+\section{\bf 引言}
+
+
+
+平均场博弈（简称 MFG）是在不可区分性和对称性假设下，为研究具有无穷多个参与者的微分博弈而提出的。该理论由 J.-M. Lasry 和 P-L. Lions~\cite{MR2269875,MR2271747,MR2295621} 提出，并由 Caines、Huang 和 Malham{\'e} 以纳什确定性等价原理之名独立提出~\cite{MR2346927,MR2352434}。平均场博弈对应于非合作博弈并关注纳什均衡，而其合作情形则以平均场型控制（或平均场控制，简称 MFC）或 McKean-Vlasov 动力学的最优控制之名得到研究~\cite{MR3395471,MR3134900}。更多细节可参见 Lions 在 Coll\`ege de France 的课程~\cite{PLL-CDF}、Cardaliaguet 的讲义~\cite{Cardaliaguet-2013-notes}，以及 Bensoussan、Frehse 和 Yam 的著作~\cite{MR3134900}、Gomes、Pimentel 和 Voskanyan 的著作~\cite{MR3559742}、Carmona 和 Delarue 的著作~\cite{MR3752669,MR3753660}，还有 Gomes 和 Sa{\'u}de 的综述~\cite{MR3195844}以及 Caines、Huang 和 Malham{\'e} 的综述~\cite{CHM-2017-survey}。平均场博弈和平均场控制问题引起了研究者的广泛兴趣，并已在从经济学到人群运动或流行病模型研究等诸多领域获得应用。
+对于具体应用，获得可靠的定量求解结果通常十分重要。由于极少有平均场问题具有显式解或半显式解，数值方法的提出及其分析是这一领域发展中的关键步骤。
+
+这些讲义旨在介绍平均场博弈和平均场控制问题的数值方法。我们将同时讨论数值格式及其相关算法，并通过数值算例加以说明。为了在传达主要思想的同时简化叙述，我们不对数学形式体系作详细展开。希望了解更严格论述的读者可参阅正文中给出的参考文献（尤其参见讲义~\cite{MR3135339,achdoulauriere-2020-mfg-numerical}）。
+
+
+
+
+
+\subsection{内容概要}
+
+这些讲义其余部分的安排如下。在本节余下部分中，我们将介绍所考虑问题类型的一般框架。第~\ref{AMS-num-sec:LQ}节以线性--二次问题为试验平台，介绍若干可应用于更一般问题的数值策略，例如不动点迭代、虚拟博弈迭代和 Newton 迭代。超越线性--二次结构之后，第~\ref{AMS-num-sec:PDE-scheme}节讨论用偏微分方程系统表示的最优性条件，并介绍两种离散这些偏微分方程的数值格式：有限差分格式和半拉格朗日格式。在第~\ref{AMS-num-sec:sol-strat}节中，我们将介绍求解离散格式的一些策略并给出数值算例，其中包括具有拥挤效应的人群运动。第~\ref{AMS-num-sec:optim-variational}节着重讨论具有变分结构的平均场控制问题与平均场博弈。对于这类问题，可以使用优化技术；我们将介绍其中两种：交替方向乘子法和一种原始--对偶算法。对于满足单调性条件的平均场博弈，第~\ref{AMS-num-sec:monotone-op}节将讨论一种基于单调流的不同技术。最后两节介绍借用机器学习工具的技术。第~\ref{AMS-num-sec:NNapprox}节介绍依赖神经网络近似来求解随机最优控制问题或偏微分方程的方法。我们分别将这些方法应用于平均场控制和（有限状态平均场博弈的）主方程。第~\ref{AMS-num-sec:modelfree}节讨论无模型方法，\textit{即}，在不了解完整模型的情况下通过试错来学习解的方法。最后，我们在第~\ref{sec:conclusion}节中提及其他方法和研究方向。
+
+
+
+\subsection{问题的定义与记号}
+
+设 $T$ 为固定的时间范围，设 $d$ 和 $\ctrldim$ 为整数，并设 $\dom \subseteq \RR^d$ 为空间区域，通常取为全空间 $\RR^d$ 或单位环面 $\TT^d$。我们将使用记号 $\domT = [0,T] \times \dom$ 和 $\langle \cdot, \cdot \rangle$ 表示维数相容的两个向量的内积。
+
+设 $f: \dom \times L^2(\dom) \times \RR^\ctrldim \to \RR, (x,m,\ctrl) \mapsto f(x,m,\ctrl)$ 和 $g: \dom \times L^2(\dom) \to \RR, (x,m) \mapsto g(x,m)$ 分别为运行成本和终端成本。设 $\sigma \ge 0$ 为状态演化的波动率常参数。设 $b:  \dom \times L^2(\dom) \times \RR^\ctrldim \to \RR^d, (x,m,\ctrl) \mapsto b(x,m,\ctrl)$ 为漂移函数。以记号更为繁复为代价，也可以允许这些函数依赖于时间。这里，$x,m$ 和 $\ctrl$ 分别表示智能体的状态、平均场项（\textit{即}，总体分布）以及智能体所采用的控制。一般而言，平均场项是一个概率测度，但为简单起见，这里假设该概率测度具有属于 $L^2(\dom)$ 的密度。
+
+我们考虑如下的\index{mean field game}平均场博弈。一个（平均场）纳什均衡由概率密度流$\hat{m}: \domT \to \RR$和反馈控制$\hat{\ctrl}: \domT\to \RR^\ctrldim$构成，并满足以下两个条件：
+\begin{enumerate}
+	\item $\hat{\ctrl}$使$J^{MFG}_{\hat{m}}$最小，其中，对于$m \in L^2(\domT)$，
+\begin{align}
+\label{AMS-num-eq:def-J-MFG}
+	J^{MFG}_{m}: \ctrl \mapsto  \EE \left[\int_0^T f(X_t^{m, \ctrl}, m(t, \cdot), \ctrl(t,X_t^{m, \ctrl}) ) dt + g(X_T^{m, \ctrl}, m(T,\cdot)) \right]
+\end{align}
+约束条件为过程$X^{m, \ctrl} = (X_t^{m, \ctrl})_{t \ge 0}$满足随机微分方程（SDE）
+\begin{equation}
+\label{AMS-num-eq:dyn-X-general-MFG}
+	d X_t^{m, \ctrl} = b(X_t^{m, \ctrl}, m(t,\cdot), \ctrl(t, X_t^{m, \ctrl})) dt + \sigma d W_t, \qquad t \ge 0,
+\end{equation}
+其中，$W$是标准$d$维布朗运动，并且$X_0^{m, \ctrl}$服从给定密度为$m_0$的分布；
+	\item 对所有$t \in [0,T]$，$\hat{m}(t,\cdot)$是$X_t^{\hat{m}, \hat{\ctrl}}$之分布律的概率密度。
+\end{enumerate}
+在成本函数的定义~\eqref{AMS-num-eq:def-J-MFG}中，下标$m$用于强调其对平均场流的依赖性；当无穷小参与者进行其优化时，该平均场流是固定的。第二个条件保证，如果所有参与者都使用第一点中计算出的控制$\hat{\ctrl}$，那么其个体状态的分布律确实为$\hat{m}$。
+
+使用相同的运行成本、终端成本、漂移函数和波动率，我们可以考察相应的\index{mean field control}平均场控制（简称 MFC）问题。该问题对应于一个社会最优，并表述为一个最优控制问题。它可以解释为所有参与者合作以最小化平均成本的情形。目标是找到使下式最小化的反馈控制$\ctrl^*: \domT\to \RR^\ctrldim$
+\begin{align}
+\label{AMS-num-eq:def-J-MFC}
+	J^{MFC}: \ctrl \mapsto \EE \left[\int_0^T f(X_t^{\ctrl}, m^{\ctrl}(t,\cdot), \ctrl(t,X_t^{\ctrl}) ) dt + g(X_T^{\ctrl}, m^{\ctrl}(T,\cdot)) \right]
+\end{align}
+其中，$m^{\ctrl}(\cdot, t)$是$X_t^{\ctrl}$之分布律的概率密度，约束条件为过程$X^{\ctrl} = (X_t^{\ctrl})_{t \ge 0}$满足 SDE
+\begin{equation}
+\label{AMS-num-eq:dyn-X-general-MFC}
+	d X_t^{\ctrl} = b(X_t^{\ctrl}, m^{\ctrl}(t,\cdot), \ctrl(t, X_t^{\ctrl})) dt + \sigma d W_t, \qquad t \ge 0,
+\end{equation}
+并且$X_0^{\ctrl}$服从给定密度为$m_0$的分布。 
+
+除了可解释为大量合作参与者的社会最优之外，平均场控制问题也出现在风险管理~\cite{MR2784835}或成本涉及条件期望的最优控制~\cite{MR4133380,achdoulaurierelions2020optimal}中。
+
+令$m^* = m^{\ctrl^*}$表示最优平均场流。那么，对于任意平均场博弈均衡$(\hat\ctrl, \hat m )$，都有：
+$$
+	J^{MFC}(\ctrl^*) = J^{MFG}_{m^*}(\ctrl^*) \leq J^{MFG}_{\hat{m}}(\hat{\ctrl}).
+$$
+一般而言，该不等式是严格的，这引出了无政府价格的概念，我们将在下文中对此加以说明。
+
+尽管我们将主要关注上述引入的问题，但第~\ref{AMS-num-sec:monotone-op}节讨论了遍历情形，而有限状态平均场博弈则在~\S~\ref{AMS-num-sec:NN-finite-master}中予以考察。 
+
+
+
+
+
+
+\clearpage
+
+
+
+
+\section{\bf 预备：线性二次问题}
+\label{AMS-num-sec:LQ}
+
+我们首先考虑一类重要的问题：一方面，其动力学关于状态、控制和状态均值（也可能包括控制均值）是线性的；另一方面，其成本关于这些变量是二次的。此时，平均场博弈和平均场控制的最优控制$\hat\ctrl$与$\ctrl^*$可以由一个后向常微分方程组刻画，而该方程组通常与描述状态均值演化的前向常微分方程耦合。\footnote{在某些情况下，适当的参数化会导出一个解耦的常微分方程组；相关示例参见\textit{例如}~\cite{gravesmalhame-AMS-tmp}。}
+
+
+
+
+\subsection{问题定义与平均场博弈解}
+\label{AMS-num-sec:LQ-pb}
+我们采用~\cite[Chapter 6]{MR3134900}中的如下例子。为便于表述，我们将注意力限制在一维情形，即$d=\ctrldim=1$。考虑
+\begin{align*}
+	f(x,m,\ctrl)	&= \frac{1}{2} \left[ Q x^2 + \bar{Q} \left(x - S \int_{\dom} \xi m(\xi) d\xi \right)^2 + C \ctrl^2 \right]
+	\\
+	g(x,m) 	&= \frac{1}{2} \left[ Q_T x^2 + \bar{Q}_T \left(x - S_T \int_{\dom} \xi m(\xi) d\xi \right)^2 \right]
+	\\
+	b(x,m,\ctrl) 	&= Ax + \bar{A} \int_{\dom} \xi m(\xi) d\xi + B\ctrl \, ,
+\end{align*}
+其中，$Q, C, \bar{Q}, Q_T, \bar{Q}_T$是非负常数，而$A, \bar{A}, S, S_T$和$B$是常数。令$\nu = \tfrac{1}{2} \sigma^2$。我们假设初始分布是某个$\bar{x}_0 \in \RR$和$\sigma_0>0$所确定的正态分布$\mathcal{N}(\bar x_0, \sigma_0^2)$。
+
+在这些系数满足适当条件时，上述模型的平均场博弈存在唯一解$(\hat{\ctrl}, \hat{m})$，且该解满足以下关系。证明依赖于动态规划以及对值函数采用适当的拟设。更多细节参见\textit{例如}~\cite[Chapter 6]{MR3134900}。其解为：
+ \begin{subequations}
+     \begin{empheq}[left=\empheqlbrace]{align*}
+		\int_\dom \xi \hat{m}(t,\xi) d \xi &= z_t,
+		\\
+		\hat{\ctrl}(t,x) &= -B(p_t x + r_t) / C,
+		\\
+		J^{MFG}_{\hat{m}}(\hat{\ctrl}) &= \int_\dom u(0,\xi) m_0(\xi) d\xi = \frac{1}{2} p_0(\sigma_0^2 + \bar x_0^2) + r_0 \bar x_0 + s_0,
+		\\
+		u(t,x) &= \frac{1}{2}p_t x^2 + r_t x + s_t,
+     \end{empheq}
+   \end{subequations}
+其中，$(z, p, r, s)$满足如下常微分方程（ODE）系统：
+    \begin{subequations}
+     \begin{empheq}[left=\empheqlbrace\,\,]{align}
+     \label{AMS-num-eq:LQ-ODE-z}
+     \frac{d z}{dt} &= (A+\bar{A} - B^2 C^{-1}p_t) z_t - B^2 C^{-1} r_t, 			&& z_0 = \int_{\dom} \xi m_0(\xi) d\xi,
+     \\
+     \label{AMS-num-eq:LQ-ODE-P}
+     -\frac{d p}{dt} &= 2Ap_t - B^2C^{-1}p_t^2 + Q + \bar{Q}, 				&& p_T = Q_T + \bar{Q}_T,
+     \\
+     \label{AMS-num-eq:LQ-ODE-r}
+     - \frac{d r}{dt} &= (A - B^2 C^{-1}p_t )r_t + (p_t \bar{A} - \bar{Q} S) z_t, 	&& r_T = - \bar{Q}_T S_T z_T,
+     \\
+     \label{AMS-num-eq:LQ-ODE-s}
+     - \frac{d s}{dt} &= \nu p_t - \frac{1}{2} B^2 C^{-1} r_t^2 + r_t \bar{A} z_t + \frac{1}{2} S^2 \bar{Q} z_t^2, && s_T = \frac{1}{2} \bar{Q}_T S_T^2 z_T^2.
+     \end{empheq}
+   \end{subequations} 在该系统中，$z$表示总体分布的均值，而$r$（与$p$一起）刻画最优响应。事实上，$u(t,x) = \frac{1}{2}p_t x^2 + r_t x + s_t$是总体处于纳什均衡时无穷小参与者的值函数。
+最后一个方程可以用$z,p$和$r$表示出显式解。第二个方程可以独立于其他方程求解。它是一个 Riccati 方程，并且在适当条件下存在唯一的正解（若$d>1$，则为对称解）。第一个方程与第三个方程相互耦合。注意，关于$z$的方程沿时间前向求解，而关于$r$的方程沿时间后向求解。这种前向--后向结构使得无法使用简单的时间推进方法对该系统进行数值求解。这一障碍是平均场博弈和平均场控制问题数值方法的核心。下面我们利用这个线性二次例子说明主要思想，并介绍几种处理前向--后向系统的策略。在本节余下部分，我们假设满足~\eqref{AMS-num-eq:LQ-ODE-P}的$p$已给定，并重点讨论系统~\eqref{AMS-num-eq:LQ-ODE-z}--\eqref{AMS-num-eq:LQ-ODE-r}。
+
+
+\subsection{时间离散化}
+\label{AMS-num-sec:LQ-ODE-time-discr}
+
+为数值求解该常微分方程组，我们首先将区间$[0,T]$划分为$N_T$个子区间，其中$N_T$是正整数。令$\Delta t = 1/N_T$，并对$i=0,\dots,N_T$令$t_i = i \times \Delta t$。时间函数$(z_t)_{t \in [0,T]}$、$(p_t)_{t \in [0,T]}$、$(r_t)_{t \in [0,T]}$和$(s_t)_{t \in [0,T]}$分别由向量$Z = (Z^n)_{n=0,\dots,N_T}$、$P = (P^n)_{n=0,\dots,N_T}$、$R = (R^n)_{n=0,\dots,N_T}$和$S = (S^n)_{n=0,\dots,N_T}$近似。随后，用有限差分系统替代常微分方程组~\eqref{AMS-num-eq:LQ-ODE-z}--\eqref{AMS-num-eq:LQ-ODE-r}。重点考虑~\eqref{AMS-num-eq:LQ-ODE-z}和~\eqref{AMS-num-eq:LQ-ODE-r}，我们对$n \in \{0,\dots,N_T-1\},$考虑如下系统：
+\begin{subequations}
+     \begin{empheq}[left=\empheqlbrace\,\,]{align}
+     \label{AMS-num-eq:LQ-ODE-z-discrete}
+     &\frac{Z^{n+1} - Z^{n}}{\Delta t} = (A+\bar{A} - B^2 C^{-1}P^{n}) Z^{n+1} - B^2 C^{-1} R^{n}, 			
+     \\
+     \notag
+    &Z^0 = \bar x_0,
+     \\
+     \label{AMS-num-eq:LQ-ODE-r-discrete}
+     &- \frac{R^{n+1}-R^{n}}{\Delta t} = (A - B^2 C^{-1} P^n ) R^{n} + (P^n \bar{A} - \bar{Q} S) Z^{n+1}, 	
+     \\
+     \notag
+      &\hfill R^{N_T} = - \bar{Q}_T S_T Z^{N_T}.
+     \end{empheq}
+   \end{subequations}
+
+注意，对于每个方程（分别考虑），该格式都是半隐式的，因为第一个方程在时间上向前，而第二个方程在时间上向后。该有限差分系统可以改写为矩阵形式：
+\begin{equation}
+\label{AMS-num-eq:LQ-ODE-matrix-form}
+	\matM 	
+	\begin{pmatrix}
+		Z
+		\\
+		R
+	\end{pmatrix}
+	+ \matB 
+	=
+	0\, ,
+\end{equation}
+其中，$\matM \in \RR^{(N_T+1) \times (N_T+1)}$ 和 $\matB \in \RR^{(N_T+1)}$ 的定义同时考虑了动力学以及初始条件和终端条件。因此，可以通过求解该线性系统直接得到 $(Z,R)$。然而，这是 LQ 情形所特有的。正如我们将在下一节中看到的，平均场博弈中出现的前向--后向 PDE 系统一般不是线性的。因此，在本节余下部分中，我们将介绍若干不利用线性结构的求解策略，这些策略将在更一般的情形中发挥作用。此处仅使用 LQ 问题作为示例，以说明这些方法背后的主要思想。
+
+
+\subsection{Picard（不动点）迭代}
+
+为简化表述，我们保留 ODE 记号，\textit{即}，~\eqref{AMS-num-eq:LQ-ODE-z}\&\eqref{AMS-num-eq:LQ-ODE-r}，尽管在实现中，我们使用其有限差分版本，\textit{即}，~\eqref{AMS-num-eq:LQ-ODE-z-discrete}\&\eqref{AMS-num-eq:LQ-ODE-r-discrete}。第一种方法是交替求解每个 ODE。从初始猜测 $z^{(0)}$ 出发，求解~\eqref{AMS-num-eq:LQ-ODE-r}，其中将 $z$ 替换为 $z^{(0)}$。将其解记为 $r^{(1)}$，然后求解~\eqref{AMS-num-eq:LQ-ODE-z}，其中将 $r$ 替换为 $r^{(1)}$。随后重复这些步骤，将 $z^{(1)}$ 代入~\eqref{AMS-num-eq:LQ-ODE-r}，依此类推。该过程定义了一个映射 $\varphi$，使得 $\varphi(z^{(0)}) = z^{(1)}$。如果该映射是严格压缩映射，则上述迭代收敛。算法~\ref{AMS-num-algo:LQ-ODE-Picard} 给出了伪代码，其中（普通）Picard 迭代对应于 $\delta(\cdot) \equiv 0$ 的情形，图~\ref{AMS-num-fig:LQ-ODE-Picard-converge} 展示了一个示例。这里我们采用表~\ref{AMS-num-tab:params-LQ-base} 中测试情形~1 所述的参数值。除了先验固定迭代次数之外，我们还可以考虑如下形式的停止准则：
+$$
+	\|r^{(\mathtt{k}+1)} - r^{(\mathtt{k})}\| < \varepsilon, \quad \hbox{ and } \quad \|z^{(\mathtt{k}+1)} - z^{(\mathtt{k})}\| < \varepsilon,
+$$
+其中阈值为 $\varepsilon>0$。
+
+
+
+
+
+{\renewcommand{\arraystretch}{1.2}
+\begin{table}[!ht]
+\begin{center}
+	\begin{tabular}{c|c|c|c|c|c|c}
+				\hline
+			参数 & $Q, R ,S ,S_T, A, B,\sigma, \bar x_0$ & $\bar Q$  & $\bar Q_T$   & $Q_T$ & $\bar A$ & $\sigma_0$	\\
+			\hline
+			 测试情形 1 & $1$ & $1$ & $1$ & $1$ & $1$ & $0.2$ \\
+			\hline
+			 测试情形 2 & $1$ & $1$ & $2.45$ & $1$ & $1$  & $0.2$ \\
+			\hline
+			 测试情形 3 & $1$ & $0$ & $0$ & $1$ & $[0,20]$ & $0.2$ \\
+			 \hline
+			 测试情形 4 & $1$ & $0$ & $[0,20]$ & $1$ & $1$ &  $0.2$ \\
+			 \hline
+			 测试情形 5 & $1$ & $0$ & $1$ & $[0,20]$ & $1$ &  $0.2$ \\
+				 \hline 
+				\end{tabular}
+\caption{\S~\ref{AMS-num-sec:LQ-pb} 中引入的 LQ 模型的参数值。测试情形将在正文中讨论。}
+\label{AMS-num-tab:params-LQ-base}
+	\end{center}
+\end{table}
+}
+
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-pure_testAll1_iter50_z-r_diff}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-pure_testAll1_iter50_z-r_traj}.pdf}
+	\end{subfigure}
+	\caption{测试情形~1（见表~\ref{AMS-num-tab:params-LQ-base}）的不带阻尼 Picard 迭代：$L^2$ 两次相继迭代之间的差（左图），以及 $z^{(50)}$ 和 $r^{(50)}$（右图）。与 $z$ 和 $r$ 相关的曲线分别为蓝色（实线）和红色（虚线）。} 
+ 	\label{AMS-num-fig:LQ-ODE-Picard-converge}
+\end{figure}
+
+
+然而，该过程在许多示例中都会失效。基于表~\ref{AMS-num-tab:params-LQ-base} 中测试情形~2 的图~\ref{AMS-num-fig:LQ-ODE-Picard-fail} 给出了一个例子：这里可以看到，$z^{(\mathtt{k})}$ 和 $r^{(\mathtt{k})}$ 最终在相继迭代之间彼此响应，整个过程发散。在平均场博弈的框架下，对这一现象的一种可能解释如下（回顾 $z$ 对应于均衡均值，而 $r$ 是均衡控制的一部分）。给定一条平均场项的轨迹，每个智能体计算其对该群体行为的最佳响应。应用这一最佳响应会产生一条新的平均场项轨迹。再次计算最佳响应则会回到第一条轨迹。这类现象在双人博弈中也是众所周知的。
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.33\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-pure_iter200_z-r_diff}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.33\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-pure_iter200_z-r-old_traj}.pdf}
+	\end{subfigure}
+	\begin{subfigure}{.33\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-pure_iter200_z-r_traj}.pdf}
+	\end{subfigure}
+	\caption{测试情形~2（见表~\ref{AMS-num-tab:params-LQ-base}）的不带阻尼 Picard 迭代：$L^2$ 两次相继迭代之间的差（左图），$z^{(199)}$ 和 $r^{(199)}$（中图），以及 $z^{(200)}$ 和 $r^{(200)}$（右图）。与 $z$ 和 $r$ 相关的曲线分别为蓝色（实线）和红色（虚线）。} 
+ 	\label{AMS-num-fig:LQ-ODE-Picard-fail}
+\end{figure}
+
+
+
+尝试修正上述方法的一种简单方式是在迭代中加入阻尼。令 $\omega \in [0,1)$ 为阻尼参数。在第 $\mathtt{k} \ge 0$ 次迭代中，令 $z^{(\mathtt{k}+1)}$ 为带有 $r^{(\mathtt{k})}$ 的~\eqref{AMS-num-eq:LQ-ODE-z} 的解；我们不将这条新的平均场轨迹直接代入~\eqref{AMS-num-eq:LQ-ODE-r}，而是定义
+$$
+	\tilde{z}^{(\mathtt{k}+1)} = \omega \tilde{z}^{(\mathtt{k})} + (1-\omega) z^{(\mathtt{k}+1)}
+$$
+并将该轨迹代入~\eqref{AMS-num-eq:LQ-ODE-r} 以计算 $r^{(\mathtt{k}+1)}$。这对应于在算法~\ref{AMS-num-algo:LQ-ODE-Picard} 中取 $\delta(\cdot) \equiv \omega$。对普通 Picard 迭代作这样的修改通常有助于保证迭代收敛，但阻尼参数的选择并不显然：如果它太小，迭代仍可能无法收敛；而如果它太大，收敛将非常缓慢。见图~\ref{AMS-num-fig:LQ-ODE-Picard-damped-converge} 和图~\ref{AMS-num-fig:LQ-ODE-Picard-damped-fail}。
+
+
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-damped-0p1_iter200_z-r_diff}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-damped-0p1_iter200_z-r_traj}.pdf}
+	\end{subfigure}
+	\caption{测试情形~2（见表~\ref{AMS-num-tab:params-LQ-base}）的具有常数阻尼 $\omega = 0.1$ 的 Picard 迭代：$L^2$ 两次相继迭代之间的差（左图），以及 $z^{(200)}$ 和 $r^{(200)}$（右图）。与 $z$ 和 $r$ 相关的曲线分别为蓝色（实线）和红色（虚线）。} 
+ 	\label{AMS-num-fig:LQ-ODE-Picard-damped-converge}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}{.33\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-damped-0p01_iter200_z-r_diff}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.33\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-damped-0p01_iter200_z-r-old_traj}.pdf}
+	\end{subfigure}
+	\begin{subfigure}{.33\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Picard-damped-0p01_iter200_z-r_traj}.pdf}
+	\end{subfigure}
+	\caption{测试案例~2（见表~\ref{AMS-num-tab:params-LQ-base}）中采用常数阻尼 $\omega = 0.01$ 的 Picard 迭代：$L^2$ 两次相继迭代之差（左图），$z^{(199)}$ 和 $r^{(199)}$（中图），以及 $z^{(200)}$ 和 $r^{(200)}$（右图）。与 $z$ 和 $r$ 相关的曲线分别以蓝色（实线）和红色（虚线）表示。} 
+ 	\label{AMS-num-fig:LQ-ODE-Picard-damped-fail}
+\end{figure}
+
+
+
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+  
+  \KwInput{初始猜测 $(\tilde z, \tilde r)$；阻尼 $\delta(\cdot)$；迭代次数 $\mathtt{K}$}
+  \KwOutput{求解~\eqref{AMS-num-eq:LQ-ODE-z}\&\eqref{AMS-num-eq:LQ-ODE-r} 的 $(\hat z, \hat r)$ 的近似}
+  初始化 $z^{(0)} = \tilde z^{(0)} = \tilde z, r^{(0)} = \tilde r$ \;
+        \For{$\mathtt{k}=0,1,2,\dots, \mathtt{K}-1$}    
+        { 
+        	令 $r^{(\mathtt{k}+1)}$ 为下列方程的解：
+	$$
+		 - \frac{d r}{dt} = (A - P_t B^2 C^{-1})r_t + (P_t \bar{A} - \bar{Q} S) \tilde{z}^{(\mathtt{k})}_t, 	\qquad r_T = - \bar{Q}_T S_T \tilde{z}^{(\mathtt{k})}_T
+	$$\;
+	令 $z^{(\mathtt{k}+1)}$ 为下列方程的解：
+	$$
+		\frac{d z}{dt} = (A+\bar{A} - B^2 C^{-1}) z_t - B^2 C^{-1} r^{(\mathtt{k}+1)}_t, 			\qquad  z_0 = \bar x_0 
+	$$\;
+	令 $\tilde{z}^{(\mathtt{k}+1)} = \delta(\mathtt{k}) \tilde{z}^{(\mathtt{k})} + (1-\delta(\mathtt{k})) z^{(\mathtt{k}+1)}$
+        }
+        \Return{$(z^{(\mathtt{K})}, r^{(\mathtt{K})})$} 
+
+\caption{固定点迭代 \label{AMS-num-algo:LQ-ODE-Picard}}
+\end{algorithm}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{虚拟博弈}
+
+另一种在算法博弈论中得到广泛研究的方法是所谓的虚拟博弈。它也引起了平均场博弈领域的关注~\cite{MR3608094,MR4030259,Elie2020OnTC,perrin2020fictitious}。同样，该方法依次更新平均场项和控制，但此处的控制被计算为对先前迭代中平均场项加权平均的最优响应。在此处所研究的 LQ 示例中，可将该方法重新表述如下：给定 $\tilde{z}^{(\mathtt{k})}$，计算 $r^{(\mathtt{k}+1)}$，并且 
+$$
+	\tilde{z}^{(\mathtt{k}+1)} = \frac{\mathtt{k}}{\mathtt{k}+1} \tilde{z}^{(\mathtt{k})} + \frac{1}{\mathtt{k}+1} z^{(\mathtt{k}+1)}
+$$
+其中，$z^{(\mathtt{k}+1)}$ 求解~\eqref{AMS-num-eq:LQ-ODE-z}，但将其中的 $r$ 替换为 $r^{(\mathtt{k}+1)}$。 
+ 这对应于取 $\delta(\mathtt{k}) = \frac{\mathtt{k}}{\mathtt{k}+1}$ 的算法~\ref{AMS-num-algo:LQ-ODE-Picard}。 
+ 
+该方法的一个重要优点是，可以证明其在比 Picard 迭代更宽松的条件下收敛，见~\cite{MR3608094}。然而，阻尼效应会随着迭代次数的增加而增强，这意味着收敛可能更慢。图~\ref{AMS-num-fig:LQ-ODE-FictitiousPlay-convergence} 对此进行了说明。文献~\cite{MR4030259} 提出了改进收敛性的启发式方法。
+
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/FictitiousPlay_iter200_z-r_diff}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/FictitiousPlay_iter200_z-r_traj}.pdf}
+	\end{subfigure}
+	\caption{测试案例~2（见表~\ref{AMS-num-tab:params-LQ-base}）中的虚拟博弈迭代：$L^2$ 两次相继迭代之差（左图），以及 $z^{(200)}$ 和 $r^{(200)}$（右图）。与 $z$ 和 $r$ 相关的曲线分别以蓝色（实线）和红色（虚线）表示。} 
+ 	\label{AMS-num-fig:LQ-ODE-FictitiousPlay-convergence}
+\end{figure}
+
+
+
+
+
+
+
+\subsection{Newton 迭代}
+
+除了通过先求解一个前向方程、再求解一个后向方程来交替更新 $z$ 和 $r$ 之外，另一种方法是使用 Newton 迭代求解整个前向--后向系统。按照 \S~\ref{AMS-num-sec:LQ-ODE-time-discr} 中的方法离散化时间后，其思想是将系统~\eqref{AMS-num-eq:LQ-ODE-z-discrete}\&\eqref{AMS-num-eq:LQ-ODE-r-discrete} 视为如下定义的算子 $\mathcal{F}: \RR^{2(N_T+1)} \to \RR^{2(N_T+1)}$ 的零点：
+$$
+	(Z,R) \hbox{ solve } \eqref{AMS-num-eq:LQ-ODE-z-discrete}-\eqref{AMS-num-eq:LQ-ODE-r-discrete} \Leftrightarrow \mathcal{F}(Z,R) = 0.
+$$
+注意，$\mathcal{F}$ 必须考虑初始条件和终端条件。 
+用 $D \mathcal{F}$ 表示该算子的微分，算法~\ref{AMS-num-algo:LQ-ODE-Newton} 总结了寻找 $\mathcal{F}$ 的零点的 Newton 迭代。在当前的 LQ 示例中，该算子是线性的，因此求解~\eqref{AMS-num-eq:LQ-Newton-step-k} 与直接求解所关注的线性系统~\eqref{AMS-num-eq:LQ-ODE-matrix-form} 一样直接。见图~\ref{AMS-num-fig:LQ-ODE-Newton}。然而，这种基于 Newton 迭代的策略在求解非线性 PDE 前向--后向系统时将尤其有用（见 \S~\ref{sec:NewtonPDE}）。 
+
+
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+  
+  \KwInput{初始猜测 $(\tilde Z, \tilde R)$；迭代次数 $\mathtt{K}$}
+  \KwOutput{求解~\eqref{AMS-num-eq:LQ-ODE-z}\&\eqref{AMS-num-eq:LQ-ODE-r} 的 $(\hat z, \hat r)$ 的近似}
+  初始化 $(Z^{(0)}, R^{(0)}) = (\tilde Z, \tilde R)$ \;
+        \For{$\mathtt{k}=0,1,2,\dots, \mathtt{K}-1$}    
+        { 
+        	令 $(\tilde Z^{(\mathtt{k}+1)},\tilde R^{(\mathtt{k}+1)})$ 求解 
+	\begin{equation}
+	\label{AMS-num-eq:LQ-Newton-step-k}
+		 D\mathcal{F}(Z^{(\mathtt{k})}, R^{(\mathtt{k})})(\tilde Z^{(\mathtt{k}+1)},\tilde R^{(\mathtt{k}+1)}) = \mathcal{F}(Z^{(\mathtt{k})}, R^{(\mathtt{k})})  
+	\end{equation}\;
+	令 $(Z^{(\mathtt{k}+1)}, R^{(\mathtt{k}+1)}) = (\tilde Z^{(\mathtt{k}+1)},\tilde R^{(\mathtt{k}+1)}) + (Z^{(\mathtt{k})}, R^{(\mathtt{k})})$ \;
+	\Return{$(Z^{(\mathtt{K})}, R^{(\mathtt{K})})$}\;
+        }
+
+\caption{Newton 迭代 \label{AMS-num-algo:LQ-ODE-Newton}}
+\end{algorithm}
+
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Newton_iter-final_z-r_diff}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/LQMFG/Newton_iter-final_z-r_traj}.pdf}
+	\end{subfigure}
+	\caption{测试案例~2（见表~\ref{AMS-num-tab:params-LQ-base}）中的 Newton 迭代：$L^2$ 两次相继迭代之差（左图），以及 $z^{(200)}$ 和 $r^{(200)}$（右图）。与 $z$ 和 $r$ 相关的曲线分别以蓝色（实线）和红色（虚线）表示。} 
+ 	\label{AMS-num-fig:LQ-ODE-Newton}
+\end{figure}
+
+
+
+
+\subsection{平均场型控制与无政府代价}
+\label{AMS-num-sec:LQ-sub-MFC}
+
+利用在 \S~\ref{AMS-num-sec:LQ-pb} 中引入的线性动力学和二次成本，我们现在转向相应的平均场控制问题。对于该问题，其解同样可以用常微分方程组来刻画。更确切地说，分别用 $\ctrl^*$ 和 $m^*$ 表示最优控制及其诱导的密度流，则有
+\begin{subequations}
+     \begin{empheq}[left=\empheqlbrace]{align*}
+		\int \xi m^*(t,\xi) d \xi &= \check{z}_t,
+		\\
+		\ctrl^*(t,x) &= -B(\check{p}_t x + \check{r}_t) / C,
+		\\
+		J^{MFC}(\ctrl^*) &= \frac{1}{2} \check{p}_0(\sigma_0^2 + \bar x_0^2) + \check{r}_0 \bar x_0 + \check{s}_0 + (1-S_T)\bar Q_T S_T \check{z}_T^2
+		\\&\qquad - \int_0^T \big[(\check{p}_t \check{z}_t + \check{r}_t) \bar A \check{z}_t - (1-S_t)\bar Q S \check{z}_t^2\big]dt
+     \end{empheq}
+   \end{subequations}
+其中 $(\check{z}, \check{p}, \check{r}, \check{s})$ 是下列常微分方程组（ODEs）的解：
+    \begin{subequations}
+     \begin{empheq}[left=\empheqlbrace\,\,]{align*}
+     \frac{d \check{z}}{dt} &= (A+\bar{A} - B^2 C^{-1}) \check{z}_t - B^2 C^{-1} \check{r}_t, 			&& \check{z}_0 = \bar x_0,
+     \\
+     -\frac{d \check{p}}{dt} &= 2A\check{p}_t - B^2C^{-1}\check{p}_t^2 + Q + \bar{Q}, 				&& \check{p}_T = Q_T + \bar{Q}_T,
+     \\
+     - \frac{d \check{r}}{dt} &= (A + \bar A - \check{p}_t B^2 C^{-1})\check{r}_t + (2\check{p}_t \bar{A} - 2\bar{Q} S + \bar Q S^2) \check{z}_t, 	&& \check{r}_T = - \bar{Q}_T S_T \check{z}_T,
+     \\
+     - \frac{d s}{dt} &= \nu \check{p}_t - \frac{1}{2} B^2 C^{-1} \check{r}_t^2 + \check{r}_t \bar{A} \check{z}_t + \frac{1}{2} S^2 \bar{Q} \check{z}_t^2, && \check{s}_T = \frac{1}{2} \bar{Q}_T S_T^2 \check{z}_T^2.
+     \end{empheq}
+   \end{subequations}
+   注意，该系统与~\eqref{AMS-num-eq:LQ-ODE-z}--\eqref{AMS-num-eq:LQ-ODE-s} 非常相似，但关于 $r$ 和 $\check r$ 的常微分方程有所不同。此外，$J^{MFG}$ 和 $J^{MFC}$ 的表达式也有所不同。这是因为在平均场控制中，函数 $\check u(t,x) = \frac{1}{2}\check{p}_t x^2 + \check{r}_t x + \check{s}_t$ 并不是该控制问题的值函数，而是一个伴随状态，我们将在第~\ref{AMS-num-sec:PDE-scheme} 节中看到这一点。
+     
+由于平均场控制对应于社会最优，典型参与者支付的成本只会低于或等于平均场博弈中（具有相同成本和动力学）的成本。换言之，无政府价格（PoA）定义为：
+\begin{equation}
+\label{eq:def-MFPoA}
+	PoA = \frac{J^{MFG}_{\hat{m}}(\hat{\ctrl})}{J^{MFC}(\ctrl^*)}, 
+\end{equation}
+其至少为 $1$。图~\ref{AMS-num-fig:LQ-ODE-PoA} 展示了当 $\bar A, \bar Q$ 或 $Q_T$ 变化时的无政府价格。特别地，在测试算例~3 中，$\bar Q = \bar Q_T = 0$，并且当 $\bar A=0$ 时，无政府价格也为 $1$，见表~\ref{AMS-num-tab:params-LQ-base}。事实上，在这一情形下，平均场相互作用从成本和动力学中完全消失，因此平均场博弈和平均场控制归结为同一个问题。测试算例~4 和~5 分别说明了无政府价格对 $\bar Q_T$ 和 $Q_T$ 的依赖关系。有关线性二次平均场博弈和平均场控制中无政府价格的更多细节，见~\cite{MR3968548}。
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.33\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/PoA/Newton_testB_PoA}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.33\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/PoA/Newton_testA_PoA}.pdf}
+	\end{subfigure}
+	\begin{subfigure}{.33\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/LQ-MFG-MFC/PoA/Newton_testC_PoA}.pdf}
+	\end{subfigure}
+	\caption{测试算例~3（左）、测试算例~4（中）和测试算例~5（右）的无政府价格。参数值见表~\ref{AMS-num-tab:params-LQ-base}。} 
+ 	\label{AMS-num-fig:LQ-ODE-PoA}
+\end{figure}
+
+
+
+
+
+
+
+\clearpage
+
+\section{\bf PDE 系统与数值格式}
+\label{AMS-num-sec:PDE-scheme}
+
+一般而言，在线性二次情形之外，平均场博弈和平均场控制的最优性条件无法用常微分方程来表述。两种主要方法分别基于偏微分方程组（PDEs）和随机微分方程组（SDEs）。在这两种情形下，这些方程组都具有前向--后向结构。第三种方法基于所谓的主方程，我们将在~\S~\ref{AMS-num-sec:NN-finite-master} 中讨论该方法。目前，我们关注第一种方法，它导出一个由描述总体状态分布的前向 Kolmogorov-Fokker-Planck 偏微分方程与描述典型参与者值函数的后向 Hamilton-Jacobi-Bellman 方程耦合而成的系统。为了数值求解该偏微分方程组，首先出现的问题是如何逼近空间和时间的函数。一种可行的方法是考虑时空网格，并用这些函数在网格点处的值来逼近它们。函数由向量近似，这些向量满足由偏微分方程的适当数值格式导出的有限差分方程。
+
+
+
+
+
+
+\subsection{通过 PDE 系统得到的最优性条件}
+\label{AMS-num-sec:PDEsystem}
+
+为简单起见，除非另有说明，我们取 $d$ 维环面作为空间区域，\textit{即}，$\dom = \TT^d$。我们首先考虑平均场博弈，然后考虑平均场控制。尽管二者具有相似之处，这两个偏微分方程组仍存在重要差异，这些差异反映了两个问题之间的区别。
+
+
+
+
+\textbf{平均场博弈。} 我们首先注意到，对于给定的密度流 $\hat{m}$ 和给定的反馈控制 $\ctrl$，满足~\eqref{AMS-num-eq:dyn-X-general-MFG} 的 $X^{\hat{m}, \ctrl}_t$ 的分布密度 $m^{\hat{m}, \ctrl}_t$ 满足 Kolmogorov-Fokker-Planck（KFP）方程：
+\begin{equation}
+\label{AMS-num-eq:KFP-ctrl}
+	\frac{\partial m^{\hat{m}, \ctrl}}{\partial t}(t,x)  - \nu \Delta m^{\hat{m}, \ctrl}(t,x) + \diver\left( m^{\hat{m}, \ctrl}(t,\cdot) b(\cdot, \hat m(t), \ctrl(t,\cdot)) \right)(x) = 0, 
+	\hbox{ in } (0,T] \times \TT^d ,
+\end{equation}
+其初始条件为：
+\begin{equation}
+\label{AMS-num-eq:KFP-ctrl-init}
+	m^{\hat{m}, \ctrl}(0,x) = m_0(x), 
+	\hbox{ in } \TT^d.
+\end{equation}
+
+令 $H: \TT^d \times L^2(\TT^d) \times \RR^d  \to \in \RR$ 表示上述第一点中无穷小参与者所面对的控制问题的哈密顿量，其定义为：
+$$
+	H: (x,m,p) \mapsto H(x,m,p) = \max_{\ctrl \in \RR^\ctrldim} \{ -L(x,m,\ctrl,p) \},
+$$
+其中 $L: \TT^d \times L^2(\TT^d) \times \RR^\ctrldim \times \RR^d \to  \RR$ 是拉格朗日量，定义为
+$$
+L: (x,m,\ctrl,p) \mapsto L(x,m,\ctrl,p) =
+f(x,m,\ctrl) + \langle b(x,m,\ctrl) , p \rangle.
+$$
+下文中，我们假设运行成本 $f$ 和漂移项 $b$ 使得 $H$ 定义良好，关于 $(x,p)$ 为 $\mathcal{C}^1$，并且关于 $p$ 严格凸。我们用 $\partial_p H$ 表示 $H$ 关于变量 $p$ 的偏导数。
+
+
+
+在无穷小参与者所面对的最优控制问题中，总体密度流是给定的。根据标准最优控制理论（例如利用动态规划），最优策略可以通过上述典型参与者最优控制问题的值函数 $u$ 来刻画，该函数满足 Hamilton-Jacobi-Bellman（HJB）方程。结合分布上的均衡条件，我们得到均衡最优响应 $\hat{\ctrl}$ 可由下式刻画：
+$$
+	\hat{\ctrl}(t,x) = \argmax_{\ctrl \in \RR^\ctrldim} \big\{ -L(x, m(t,\cdot), \ctrl, \nabla u(t,x))  \big\},
+$$
+
+其中 $(u,m)$ 满足下列前向--后向偏微分方程组：
+\begin{subequations}\label{AMS-num-eq:PDE-system-MFG}
+     \begin{empheq}[left=\empheqlbrace]{alignat=2}
+     	\displaystyle
+	0&=-\frac{\partial u}{\partial t}(t,x)  - \nu \Delta u(t,x) + H(x, m(t,\cdot), \grad u(t,x)), 
+	&&\hbox{ 于 } [0,T) \times \TT^d,
+	\label{AMS-num-eq:PDE-system-MFG-HJB}
+	\\
+	\displaystyle
+	0&=\frac{\partial m}{\partial t}(t,x)  - \nu \Delta m(t,x) 
+	\notag
+	\\
+	&\qquad- \diver\left( m(t,\cdot) \partial_p H (\cdot, m(t), \grad u(t,\cdot)) \right)(x), 
+	&&\hbox{ 于 } (0,T] \times \TT^d,
+	\label{AMS-num-eq:PDE-system-MFG-KFP}
+	\\
+	&u(T,x) = g(x, m(T,\cdot)), \qquad m(0,x) = m_0(x), 
+	&&\hbox{ 于 } \TT^d.
+	\label{AMS-num-eq:PDE-system-MFG-IT}
+     \end{empheq}
+\end{subequations}
+回顾 $\nu = \frac{1}{2} \sigma^2$。
+
+\begin{example}[$f$ 分别依赖于 $\ctrl$ 和 $m$]
+\label{AMS-num-ex:special-case-sep}
+考虑漂移项即为控制的情形，\textit{即}，$b(x,m,\ctrl) = \ctrl$，其中 $\ctrldim = d$，且运行成本具有形式 $f(x,m,\ctrl) = L_0(x,\ctrl) + f_0(x,m)$，其中 $L_0(x,\cdot): \RR^d \ni \ctrl \mapsto L_0(x,\ctrl) \in \RR$ 严格凸并满足 $\lim_{|\ctrl|\to \infty} \min_{x\in \TT^d} \frac {L_0(x,\ctrl)} {|\ctrl|}=+\infty$。我们令 $H_0(x,p)= \max_{\ctrl\in \RR^d} \langle -p,\ctrl\rangle - L_0(x,\ctrl)$，其关于 $p$ 是凸的。于是
+	\begin{equation}
+	\label{AMS-num-ex:special-case-sep-H}
+	H(x,m,p)
+	 = \max_{\ctrl \in \RR^d} \{- L_0(x,\ctrl) -  \langle \ctrl , p  \rangle  \} - f_0(x,m)
+	 =  H_0(x, p)  - f_0(x,m).
+	\end{equation}
+\end{example}
+\begin{example}[具有分离依赖关系的二次哈密顿量]
+\label{AMS-num-ex:special-case-sep-quadra}
+	考虑例~\ref{AMS-num-ex:special-case-sep} 的设定，并假设 $L_0(x,\ctrl) = \tfrac{1}{2}|\ctrl|^2$，\textit{即}，$H_0(x,\cdot) = H^*_0(x,\cdot) = \tfrac{1}{2}|\cdot|^2$，其中 $H^*_0$ 表示 $H_0$ 关于第二个变量的凸共轭。则~\eqref{AMS-num-ex:special-case-sep-H} 中的最大化子为
+        $ - p$，哈密顿量为 $H(x,m,p) = \tfrac{1}{2} |p|^2 -f_0(x,m)$，
+        而均衡最优响应为 $\hat{\ctrl}(t,x) = - \nabla u(t,x)$，其中 $(u,m)$ 求解如下 PDE 系统
+	\begin{subequations}
+	\label{AMS-num-ex:special-case-sep-quadra-PDE}
+     \begin{empheq}[left=\empheqlbrace]{alignat=2}
+     	\displaystyle
+	&-\frac{\partial u}{\partial t}(t,x)  - \nu \Delta u(t,x) + \frac{1}{2} |\grad u(t,x)|^2 = f_0(x, m(t,\cdot)), 
+	&&\hbox{ 于 } [0,T) \times \TT^d,
+	\\
+	\displaystyle
+	&\frac{\partial m}{\partial t}(t,x)  - \nu \Delta m(t,x) - \diver\left( m(t,\cdot) \grad u(t,\cdot) \right)(x) = 0, 
+	&&\hbox{ 于 } (0,T] \times \TT^d,
+	\\
+	&u(T,x) = g(x, m(T,\cdot)), \qquad m(0,x) = m_0(x), 
+	&&\hbox{ 于 } \TT^d.
+     \end{empheq}
+\end{subequations}
+\end{example}
+注意，在第一个方程中，耦合仅通过右端的源项发生。
+
+\textbf{平均场型控制问题。} 在平均场控制（MFC）问题中，值函数并非仅为 $(t,x)$ 的函数。事实上，由定义~\eqref{AMS-num-eq:def-J-MFC}--\eqref{AMS-num-eq:dyn-X-general-MFC} 可见，改变控制 $\ctrl$ 也会改变密度 $m^{\ctrl}$（而平均场博弈中无穷小参与者所面对的最优控制问题并非如此，见~\eqref{AMS-num-eq:def-J-MFG}）。因此，中央规划者的值函数是总体分布的函数，并且已有研究基于这一观点发展了动态规划方法~\cite{MR3258261,MR3501391,MR3652408,MR3631380,MR3739204,djete2019mckean}。然而，仍可通过有限维空间 $\domT = [0,T] \times \dom$ 上的 PDE 系统来刻画解。该系统既可以从值函数导出，也可以通过变分法得到（关于后一种方法的更多细节，见\textit{例如}~\cite[Chapter 4]{MR3134900}）。存在实现
+$J^{MFC}( \ctrl^*)= \min J^{MFC}(\ctrl)$ 的光滑反馈函数 $\ctrl^* $ 的一个必要条件是
+$$
+  \ctrl^*(t,x) = \argmax_{\ctrl \in \RR^\ctrldim} \big\{ -L(x, m(t,\cdot), \ctrl, \nabla u(t,x))  \big\},
+$$
+其中 $(u,m)$ 求解如下偏微分方程组
+\begin{subequations} 
+     \begin{empheq}[left=\empheqlbrace]{alignat=2}
+	0 &=
+	\displaystyle
+	-\frac{\partial u} {\partial t} (t,x) - \nu \Delta u(t,x) + H( x, m(t,\cdot), \grad u(t,x)) 
+	\notag
+	\\
+	&\qquad + \int_{\TT^d} \frac{\partial H} {\partial m}(\xi, m(t,\cdot), \grad u(t, \xi))(x) m(t,\xi) d\xi  , 
+	&& \hbox{ 于 } (0,T] \times \TT^d,
+\\
+	0 &= 
+	\displaystyle \frac{\partial m} {\partial t} (t,x)  - \nu \Delta  m(t,x)
+	\notag 
+	\\
+	&\qquad - \diver\Bigl( m(t,\cdot) \partial_p H(\cdot, m(t),\grad u(t,\cdot))\Bigr)(x) ,
+	&& \hbox{ 于 } [0,T) \times \TT^d,
+	\\
+  	& u(T,x) = g (x, m(T,\cdot)) 
+	\notag \\
+	&\qquad\qquad\qquad   + \int_{\TT^d}
+\frac{\partial g} {\partial m} (\xi, m(T,\cdot))(x) m(T,\xi) d\xi, 
+	&& \hbox{ 于 }  \TT^d,
+	\\
+	& m(0,x) = m_0(x),  && \hbox{ 于 } \TT^d.
+\end{empheq}
+\end{subequations}
+与平均场博弈系统~\eqref{AMS-num-eq:PDE-system-MFG} 相比，这里存在涉及关于 $m$ 的偏导数的额外项，它们应按如下意义理解：若 $\varphi: L^2(\RR^d) \to \RR$ 可微，
+$$
+	\frac{d}{d\varepsilon} \varphi(m + \varepsilon \tilde m)(x)_{\big| \varepsilon = 0} = \int_{\RR^d} \frac{\partial \varphi}{\partial m}(m)(\xi) \tilde m(\xi) d\xi.
+$$
+ 更多细节见~\cite[Chapter 4]{MR3134900}。如果成本函数和漂移函数仅局部地依赖于密度（\textit{即}，仅依赖于参与者当前位置处的密度），则 $\frac{\partial}{\partial m}$ 成为通常意义下的导数。
+
+
+
+\textbf{存在性与唯一性。} 关于平均场博弈 PDE 系统解的存在性与唯一性问题，感兴趣的读者可参见\textit{例如}~\cite{PLL-CDF,MR2295621,Cardaliaguet-2013-notes}；关于相应的平均场控制系统，可参见\textit{例如}~\cite{MR3392611,MR3498932}。这里我们仅指出，当平均场相互作用是局部且光滑的，或通过正则化核发生时，通常可以得到解的存在性，如~\cite{MR2295621} 中所述。至于唯一性，在平均场博弈框架下，一个一般的充分条件是所谓的 Lasry-Lions \index{monotonicity condition}单调性条件~\cite{MR2295621}。直观而言，当成本函数阻碍参与者聚集时，\textit{即}，阻碍密度取较大值时，该条件成立。更确切地说，当考虑对分布的局部依赖，且终端成本 $g$ 不依赖于 $m$ 时，平均场博弈 PDE 系统经典解唯一性的一个充分条件是下述矩阵的正定性：
+$$
+  \begin{pmatrix}
+ - \frac{2}{m} \frac {\partial H} {\partial m}    \left(x, m, p\right) &   \frac {\partial } {\partial m}  \partial_p ^T H(x, m, p)
+\\
+ \frac {\partial } {\partial m}  \partial_p H(x, m, p) & 2D^2_{p,p} H(x, m, p)
+ \end{pmatrix}
+$$
+其中任意 $x\in \TT^d$、$m>0$ 和 $p\in \RR^d$。如果 $H$ 分别依赖于 $p$ 和 $m$，则 $\frac {\partial } {\partial m}  \partial_p H (x, m, p)=0$，且平均场博弈的条件变为：对于 $m>0$，$H$ 关于 $p$ 严格凸并关于 $m$ 非增；或者，$H$ 关于 $p$ 凸并关于 $m$ 严格递减。
+
+对于平均场控制问题，当平均场相互作用为局部类型时，文献~\cite{MR3392611} 提出了一个类似条件。令 $\mathcal{H}(x, m, p) = m H(x, m, p)$，一个充分条件是：对于任意 $x \in \TT^d$ 和 $m>0$，$p \mapsto \mathcal{H}(x, m, p)$ 严格凸；并且对于任意 $x \in \TT^d$ 和 $p \in \RR^d$，$\RR_+  \ni m \mapsto \mathcal{H}(x, m, p)$ 严格凹。
+
+
+
+	 
+	 
+	 
+能够相当直观地理解 Lasry-Lions 单调性条件的一个有趣例子是具有拥堵效应的人群运动。我们将在下文~\S~\ref{subsec:num-evacuation-crowd} 中回到这一点。
+ 
+
+
+
+
+
+
+
+
+\subsection{有限差分格式}
+\label{AMS-num-sec:fin-diff}
+
+
+本节介绍最早在~\cite{MR2679575} 中提出的一种有限差分格式；另见~\cite{MR3135339}。我们考虑例~\ref{AMS-num-ex:special-case-sep} 中描述的特殊情形，并重点研究局部相互作用的情形，从而对所有 $x \in \RR^d, m \in [0,+\infty), p \in \RR^d$ 均有 $H(x,m,p) = H_0(x,p) - f_0(x,m)$。类似方法已被应用于哈密顿量并非分别依赖于 $m$ 和 $p$ 的情形，并至少得到了部分分析（例如处理拥堵问题的模型，见\textit{例如}~\cite{YAJML}）。
+
+为简化记号，我们在一维设定下介绍该格式，\textit{即}，$d=1$，因此定义域为一维单位环面，记作 $\TT$。
+
+
+
+
+
+
+\paragraph{\textbf{离散化。} }
+
+令 $N_T$ 和 $N_h$ 为两个正整数。我们分别考虑时间和空间上的 $(N_T+1)$ 个和 $(N_h+1)$ 个点。对于任意整数 $i < j$，令 $\llbracket i,j \rrbracket = \{i,\dots,j\}$ 和 $\llbracket j \rrbracket = \llbracket 0, j \rrbracket$。令 $\Delta t = T/N_T$ 和 $h = 1/N_h$，并且对于 $(n,i) \in \llbracket N_T \rrbracket \times \llbracket N_h \rrbracket$，令 $t_n = n \times \Delta t, x_i = i \times h$。
+
+我们分别用向量 $U$ 和 $M \in \RR^{(N_T+1)\times(N_h+1)}$ 近似 $u$ 和 $m$，即，对每个 $(n,i) \in \llbracket N_T \rrbracket \times \llbracket N_h \rrbracket$，有 $u(t_n,x_i) \approx U^{n}_{i}$ 和 $m(t_n,x_i) \approx M^{n}_{i}$。我们分别使用上标和下标表示时间和空间指标。由于我们考虑周期边界条件，我们稍微滥用记号：对于任意 $W \in \RR^{N_h+1}$，将 $W_{N_h+1}$ 与 $W_1$ 等同，并将 $W_{-1}$ 与 $W_{N_h-1}$ 等同。周期边界条件将转化为约束 $W_{N_h} = W_0$。
+
+
+我们引入有限差分算子
+\begin{align*}
+	(D_t W)^n &= \frac{1}{\Delta t}(W^{n+1} - W^n), \qquad &&n \in \llbracket N_T-1 \rrbracket, \qquad W \in \RR^{N_T+1},
+	\\
+	(D W)_i &= \frac{1}{h} (W_{i+1} - W_{i}), \qquad &&i  \in \llbracket N_h \rrbracket, \qquad W \in \RR^{N_h+1},
+	\\
+	(\Delta_h W)_i &= -\frac{1}{h^2} \left(2 W_i - W_{i+1} - W_{i-1}\right), \qquad &&i \in \llbracket N_h \rrbracket, \qquad W \in \RR^{N_h+1},
+	\\
+	[\grad_h W]_i &= \left( (D W)_{i}, (D W)_{i-1} \right)^\top, \qquad &&i \in \llbracket N_h \rrbracket, \qquad W \in \RR^{N_h+1}.
+\end{align*}
+
+
+\paragraph{\textbf{离散哈密顿量。} }
+令 $\tilde{H}_0: \TT \times \RR \times \RR \to \RR, (x,p_1,p_2) \mapsto \tilde{H}_0(x,p_1,p_2)$ 为一个离散哈密顿量，并假设其满足以下性质：
+\begin{enumerate}[label=\normalfont{\textbf{($\mathrm{\tilde H}$\arabic{*})}}, ref=\textbf{($\mathrm{\tilde H}$\arabic{*})}]
+	\it
+	\item\label{AMS-num-hyp-discH-monotonicity} 单调性：对于每个 $x \in \TT$，$\tilde{H}_0$ 关于 $p_1$ 单调不增，关于 $p_2$ 单调不减。
+	\item\label{AMS-num-hyp-discH-consistency}  相容性：对于每个 $x \in \TT, p \in \RR$，$\tilde{H}_0(x,p,p) = H_0(x,p)$。
+	\item\label{AMS-num-hyp-discH-differentiability}  可微性：对于每个 $x \in \TT$，$\tilde{H}_0$ 关于 $p_1,p_2$ 是 $\mathcal C^1$ 类的。
+	\item\label{AMS-num-hyp-discH-convexity}  凸性：对于每个 $x \in \TT$，$(p_1,p_2) \mapsto \tilde{H}_0(x,p_1,p_2)$ 是凸的。
+\end{enumerate}
+更多细节参见~\cite{MR2679575,MR3135339}。
+
+\begin{example}
+\label{AMS-num-eq-quadratic-discrete}
+例如，如果 $H_0(x,p) = \frac{1}{2} |p|^2$，则可以取 $\tilde{H}_0(x, p_1, p_2) = \frac{1}{2}|P_K(p_1,p_2)|^2$，其中 $P_K$ 表示到 $K = \RR_- \times \RR_+$ 上的投影。
+\end{example}
+
+\begin{remark}
+  类似地，对于 $d$ 维问题，我们所考虑的离散哈密顿量是定义在 $\TT^d \times (\RR^d)^2 $ 上的实值函数。
+\end{remark}
+
+\paragraph{\textbf{离散 HJB 方程。} }
+我们考虑 HJB 方程~\eqref{AMS-num-eq:PDE-system-MFG-HJB} 的如下离散版本：
+\begin{subequations}\label{AMS-num-eq:discrete-HJB-finitediff}
+     \begin{empheq}[left=\empheqlbrace]{align}
+     	\displaystyle
+	\,\, &- (D_t U_{i})^{n} - \nu (\Delta_h U^{n})_{i}
+	+ \tilde{H}_0(x_i, [\grad_h U^n]_i) 
+	\\
+	& \qquad = f_0(x_i,M^{n+1}_i) \, , 
+	&& (n,i) \in \llbracket N_T-1 \rrbracket \times \llbracket N_h \rrbracket \, ,
+	\notag
+	\\
+	\,\, &U^{n}_{0} = U^{n}_{N_h} \, ,  && n \in \llbracket N_T-1 \rrbracket \, ,
+	\\
+	\,\, &U^{N_T}_{i} = g(x_i, M^{N_T}_i) \, ,  && i \in \llbracket N_h \rrbracket \, .
+	\end{empheq}
+\end{subequations}
+
+注意，由于该方程在时间上向后求解，因此这是一个隐式格式。
+
+
+
+\paragraph{\textbf{离散 KFP 方程。} } \label{AMS-num-sec:textbfd-kfp-equat}
+为了定义 KFP 方程~\eqref{AMS-num-eq:PDE-system-MFG-KFP} 的适当离散化，我们首先考虑其弱形式。对于光滑测试函数 $w \in \mathcal{C}^{\infty}([0,T] \times \TT)$，它包含表达式
+\begin{align}
+	&- \int_{\TT} \partial_x \big( \partial_p H_0(x, \partial_x u(t,x)) m(t,x)\big) w(t,x) dx
+	\notag
+	\\
+	&=
+	\int_{\TT} \partial_p H_0(x, \partial_x u(t,x)) m(t,x) \, \partial_x w(t,x) dx  \, ,
+	\label{AMS-num-eq:HJB-weak}
+\end{align}
+以及其他项，其中我们使用了分部积分和周期边界条件。鉴于上述讨论，很自然地可以提出 \eqref{AMS-num-eq:HJB-weak} 右端的如下离散版本：
+\begin{displaymath}
+ h \sum_{i=0}^{N_h-1} M_i^{n+1} \left(  \partial_{p_1} \tilde{H}_0(x_i, [\grad_h U^n]_i)  \frac { W^n_{i+1}-W^n_i} h+
+    \partial_{p_2} \tilde{H}_0(x_i, [\grad_h U^n]_i)  \frac { W^n_{i}-W^n_{i-1}} h   \right).
+\end{displaymath}
+进行离散分部积分，我们得到 \eqref{AMS-num-eq:HJB-weak} 左端的离散对应形式如下：
+$ \displaystyle -
+  h \sum_{i=0}^{N_h-1}  	\mathcal{T}_i(U^n , M^{n+1}) W_i^n$，
+其中 $\mathcal{T}_i$ 是如下离散输运算子：
+\begin{align*}
+	\mathcal{T}_i(U, M)
+	= \frac{1}{h} 
+	&\Big( M_i  \partial_{p_1} \tilde{H}_0(x_i, [\grad_h U]_i) 
+		- M_{i-1} \partial_{p_1} \tilde{H}_0(x_{i-1}, [\grad_h U]_{i-1})
+		\\
+		&\quad +
+		M_{i+1} \partial_{p_2} \tilde{H}_0(x_{i+1}, [\grad_h U]_{i+1})
+		- M_i \partial_{p_2} \tilde{H}_0(x_i, [\grad_h U]_i)
+	\Big) \, .
+\end{align*}
+
+
+于是，对于~\eqref{AMS-num-eq:PDE-system-MFG-KFP} 的离散版本，我们考虑：
+\begin{subequations}\label{AMS-num-eq:discrete-KFP-finitediff}
+     \begin{empheq}[left=\empheqlbrace]{align}
+	\,\, &(D_t M_{i})^{n} - \nu (\Delta_h M^{n+1})_{i}
+	\label{AMS-num-eq:sysH-FP-scheme-discrete-edo}
+	\\
+	& \qquad - \mathcal{T}_i(U^{n}, M^{n+1})
+	= 0 \, , 
+	&& (n,i) \in \llbracket N_T-1 \rrbracket \times \llbracket N_h \rrbracket \, ,
+	\notag 
+	\\
+	\,\, &M^{n}_{0} = M^{n}_{N_h} \, , &&n \in \llbracket 1, N_T \rrbracket \, , 
+	\label{AMS-num-eq:sysH-FP-scheme-discrete-bc}
+	\\
+	\,\, &M^{0}_{i} = \bar m_0(x_i) \, , \,  && i \in \llbracket N_h \rrbracket \, ,
+	\label{AMS-num-eq:sysH-FP-scheme-discrete-initialc}
+\end{empheq}
+\end{subequations}
+其中，
+\begin{equation}
+  \label{AMS-num-eq:discrete-barm-0}
+	\bar m_0(x_i) = \int_{|x - x_i| \le h/2} m_0(x) dx.
+\end{equation}
+这里同样，由于该方程在时间上向前求解，因此该格式是隐式的。
+
+
+
+
+\begin{remark}[离散系统的结构]
+有限差分系统~\eqref{AMS-num-eq:discrete-HJB-finitediff}--\eqref{AMS-num-eq:discrete-KFP-finitediff} 在如下意义下保持了 PDE 系统~\eqref{AMS-num-eq:PDE-system-MFG} 的结构：算子 $M \mapsto - \nu (\Delta_h M)_{i}
+	- \mathcal{T}_i(U, M)$
+	是算子
+	$U \mapsto - \nu (\Delta_h U)_{i}
+	+ \tilde{H}_0(x_i, [\grad_h U]_i)$ 的线性化的伴随算子。事实上，
+	\begin{align*}
+		& \sum_{i} \mathcal{T}_i(U, M) W_i
+		= - \sum_{i} M_i  \left\langle \partial_p \tilde H_0(x_i, [\grad_h U]_i) , [\grad_h W]_i \right\rangle \, .
+	\end{align*}
+\end{remark}
+
+
+
+
+
+\paragraph{\bf 收敛性结果。}
+
+
+离散系统的存在性与唯一性已在~\cite[Theorems 6 and 7]{MR2679575} 中得到证明。
+单调性确保网格函数 $M$ 非负。根据 $\mathcal{T}$ 的构造，该格式保持总质量 $h \sum_{i=0}^{N_h-1} M_i^n$。注意，由于该格式是隐式的，因此时间步长不受限制。因而，该方法可用于长时间范围，并且
+该格式可以非常自然地适用于遍历型平均场博弈，参见~\cite{MR2679575}。
+
+此外，已有相应的收敛性结果。第一类收敛定理，参见~\cite{MR2679575,MR2888257,MR3097034}（特别是关于有限时间范围问题的~\cite[Theorem 8]{MR2679575}），假设平均场博弈 PDE 系统具有唯一的经典解，并且满足较强形式的 Lasry-Lions 单调性假设，参见~\cite{MR2269875,MR2271747,MR2295621}。在这些假设下，
+当网格参数 $h$ 和 $\Delta t$ 趋于零时，离散系统的解收敛到经典解。另一类结果由~\cite{MR3452251} 得到，即离散问题的解收敛到前向--后向 PDE 系统的弱解。关于精确表述，我们参见~\cite{MR3452251}，但需要强调的是，这些结果的证明既未假设平均场博弈 PDE 系统存在（弱）解，也未假设 Lasry-Lions 单调性。因此，该方法也可以视为平均场博弈 PDE 系统弱解存在性的另一种证明。除这里给出的设定外，类似的有限差分格式还被用于具有通过控制律产生的相互作用的平均场博弈~\cite{achdouKobeissi2020mfgcfinitediff}，以及时间分数阶设定~\cite{camilli2020approximation-timefrac}。
+
+
+\subsection{半拉格朗日格式}
+
+在本节中，我们提出一种替代数值格式，它采用拉格朗日视角，而非前述有限差分格式所采用的欧拉视角。直观而言，拉格朗日方法对应于追踪典型参与者动态的思想。在~\cite{MR3148086,MR3392626,MR3828859} 中，Carlini 和 Silva 针对扩散项可以缺失或退化的平均场博弈提出了一种半拉格朗日格式。为便于表述，取 $d=1$、$\dom = \RR$，并聚焦于无黏性情形（一阶情形）。拉格朗日视角在这种情况下尤其适用，因为在没有噪声时，一条轨迹完全由初始位置和控制决定。更确切地说，如果 $b(x,m,\ctrl) = \ctrl$ 且 $\nu = 0$，则状态方程~\eqref{AMS-num-eq:dyn-X-general-MFG} 的解由下式给出：
+$$
+	X_t^{\ctrl} = X_0^{\ctrl} + \int_{0}^t \ctrl(s, X_s^{\ctrl}) ds, \qquad t \ge 0.
+$$
+如例~\ref{AMS-num-ex:special-case-sep-quadra} 中那样，取形如 $f(x,m,\ctrl) = \frac{1}{2}|\ctrl|^2 + f_0(x,m)$ 的运行成本函数和终端成本函数 $g(x, m)$（其中 $f_0$ 和 $g$ 可能以非局部方式依赖于 $m \in L^2(\dom)$），可得到以下平均场博弈偏微分方程组：
+\begin{subequations}\label{AMS-num-eq:PDE-system-MFG}
+     \begin{empheq}[left=\empheqlbrace]{alignat=2}
+     	\displaystyle
+	&-\frac{\partial u}{\partial t}(t,x)  + \frac{1}{2} |\grad u(t,x)|^2 = f_0(x, m(t,\cdot)), 
+	&&\hbox{ 在 } [0,T) \times \RR \hbox{ 中},
+	\label{AMS-num-eq:PDE-system-MFG-HJB-CarliniSilva}
+	\\
+	\displaystyle
+	&\frac{\partial m}{\partial t}(t,x) - \diver\left( m(t,\cdot) \grad u(t,\cdot) \right)(x) = 0, 
+	&&\hbox{ 在 } (0,T] \times \RR \hbox{ 中},
+	\label{AMS-num-eq:PDE-system-MFG-KFP-CarliniSilva}
+	\\
+	&u(T,x) = g(x, m(T,\cdot)), \qquad m(0,x) = m_0(x), 
+	&&\hbox{ 在 } \RR \hbox{ 中}.
+	\label{AMS-num-eq:PDE-system-MFG-IT-CarliniSilva}
+     \end{empheq}
+\end{subequations}
+这相当于在系统~\eqref{AMS-num-ex:special-case-sep-quadra-PDE} 中取 $\nu=0$（并改变定义域）。
+
+\paragraph{\textbf{离散 HJB 方程。}} 给定密度流 $m = (m_t)_{t\in[0,T]}$，相应的值函数 $u$ 具有如下表示公式：
+$$
+	u(t,x) = \inf_{\ctrl \in L^2([t,T]; \RR)} \int_t^T \left[ \frac{1}{2}|\ctrl(s)|^2 + f_0(X^{\ctrl,t,x}_s, m(s,\cdot))\right] ds + g(X^{\ctrl,t,x}_T, m(T,\cdot)),
+$$
+其中，$X^{\ctrl,t,x}$ 在时刻 $t$ 从 $x$ 出发，并由 $\ctrl$ 控制。
+
+
+
+基于这一直观认识，我们考虑方程：
+\begin{equation}
+\label{AMS-num-eq:semiLagrangian-discrete-HJB}
+\begin{cases}
+	U^n_i = S_{\Delta t, h}[m](U^{n+1}, i, n), & (n,i) \in \llbracket N_T-1 \rrbracket \times  \ZZ,
+	\\
+	U^{N_T}_i = g(x_i, m(T, \cdot)), & i \in \ZZ,
+\end{cases}
+\end{equation}
+其中，$S_{\Delta t, h}$ 定义为
+\begin{equation}
+\label{AMS-num-eq:semiLagrangian-S_Deltat-h}
+	S_{\Delta t, h}[m](W, n, i) = \inf_{\ctrl \in \RR^d} \left\{ I[W](x_i + \ctrl \, \Delta t) + \frac{1}{2} |\ctrl|^2 \, \Delta t  \right\} + f_0(x_i, m(t_n, \cdot)) \, \Delta t ,
+\end{equation}
+这里，$I: \cB(\ZZ) \to \mathcal{C}_b(\RR)$ 表示如下定义的插值算子：
+$$ 
+	I[W](\cdot) = \sum_{i \in \ZZ} W_i \beta_i(\cdot), 
+$$
+其中，$\cB(\ZZ)$ 是从 $\ZZ$ 到 $\RR$ 的有界函数集合，而 $\beta_i =  \left[ 1 - \frac{|x - x_i|}{h} \right]_+$ 是支集为 $[x_{i-1}, x_{i+1}]$ 且满足 $\beta_i(x_i)=1$ 的三角函数。
+
+对于给定的密度流 $m$，由离散 HJB 方程~\eqref{AMS-num-eq:semiLagrangian-discrete-HJB} 的解 $U = (U^n_i)_{n,i}$ 出发，我们对其进行插值，以构造如下函数 $u_{\Delta t, h}[m](x,t):  [0,T] \times \RR \to \RR$：
+$$
+	u_{\Delta t, h}[m](t,x) = I[U^{[\frac{t}{\Delta t}]}](x), \qquad (t,x) \in [0,T] \times \RR.
+$$
+
+\paragraph{\textbf{离散 KFP 方程。}}
+
+为了写出 KFP 方程的离散版本，我们用正则化版本替换离散 HJB 方程的解。令 $\rho \in \mathcal{C}^\infty_c(\RR)$，其中 $\rho \ge 0$ 且 $\int \rho(x) dx = 1$。对于 $\epsilon>0$，考虑磨光函数 $\rho_\epsilon(x) = \frac{1}{\epsilon} \rho(x/\epsilon)$，并定义
+\begin{equation}
+\label{AMS-num-eq:SL-u-epsilon-Deltat-h}
+	u^{\epsilon}_{\Delta t, h}[m](t,\cdot) = \rho_\epsilon * u_{\Delta t, h}[m](t,\cdot), \qquad t \in [0,T].	
+\end{equation}
+然后，对于 $(t,x) \in [0,T] \times \RR$，引入由此诱导的控制
+\begin{equation}
+\label{AMS-num-eq:SL-hat-ctrl-epsilon-Deltat-h}
+	\hat \ctrl^{\epsilon}_{\Delta t, h}[m](t,x) = - \nabla u^{\epsilon}_{\Delta t, h}[m](t,x),
+\end{equation}
+及其离散对应形式：对于 $(n,i) \in \llbracket N_T \rrbracket \times \ZZ$，
+$$
+	\hat \ctrl^{\epsilon}_{n,i} = \hat \ctrl^{\epsilon}_{\Delta t, h}[m](t_n,x_i).
+$$
+接着定义如下离散流：对于 $(n,i) \in \llbracket N_T-1 \rrbracket \times \ZZ$，
+$$
+	\Phi^{\epsilon}_{n,n+1,i}[m] = x_i + \hat \ctrl^{\epsilon}_{\Delta t, h}[m](t_n,x_i) \Delta t \, .
+$$
+
+
+现在，我们可以引入关于 $M^{\epsilon}[m] = (M^{\epsilon,n}_i[m])_{n,i}$ 的离散 KFP 方程：
+\begin{equation}
+\label{AMS-num-eq:semiLagrangian-discrete-KFP}
+\begin{cases}
+	M^{\epsilon, n+1}_i[m] = \sum_{j} \beta_i \left( \Phi^{\epsilon}_{n, n+1, j}[m]\right) M^{\epsilon, n}_j[m]  , & (n,i) \in \llbracket N_T-1 \rrbracket \times  \ZZ,
+	\\
+	M^{\epsilon, 0}_i[m] = \int_{[x_i - h/2, x_i+h/2]} m_0(x) dx, & i \in \ZZ.
+\end{cases}
+\end{equation}
+直观而言，其思想如图~\ref{AMS-num-fig:SL-mass-evol} 所示：首先，在控制为 $(\ctrl^n_i)_{i,n}$ 时，一个在时刻 $n$ 从点 $x_i$ 出发的参与者应当在时刻 $n+1$ 到达点 $x_i + \alpha^n_i \Delta t$（品红色虚线箭头）。假设该点位于网格点 $x_{j-1}$ 和 $x_j$ 之间，则 $x_i$ 处的质量 $M^n_i$（蓝色矩形）将被分配至 $x_{j-1}$ 和 $x_j$。移动到每个点的质量比例与帽函数 $\beta_{j-1}$ 和 $\beta_{j}$（红色）在到达点 $x_i + \alpha^n_i \Delta t$ 处的取值成正比。
+
+\begin{figure}[h]
+	\begin{subfigure}{.9\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/SEMI-LAGRANGIAN/SemiLagDiagramMass/semiLagDiagramMass_v2-figure0}.pdf}
+	\end{subfigure}%
+	\caption{由~\eqref{AMS-num-eq:semiLagrangian-discrete-KFP} 给出并在正文中说明的质量演化示意图。底行对应于时刻 $n$，顶行对应于时刻 $n+1$。} 
+ 	\label{AMS-num-fig:SL-mass-evol}
+\end{figure}
+
+
+由此，我们可以通过如下方式定义 $m^{\epsilon}_{\Delta t, h}[m]: [0,T] \times \RR \to \RR$ 来恢复一个函数：对于 $n \in \llbracket N_T-1 \rrbracket$，对于 $t \in [t_n, t_{n+1})$，
+\begin{align}
+	\label{AMS-num-eq:m-epsilon-Deltat-h}
+	m^{\epsilon}_{\Delta t, h}[m](t,x) 
+	&= \frac{1}{\rho} \left[ \frac{t_{n+1}-t}{\Delta t} \sum_{i \in \ZZ} M^{\epsilon, n}_{i}[m] \indic_{[x_i - h/2, x_i+h/2]}(x)  \right.
+	\\
+	&\qquad\qquad\qquad 
+	\left. + \frac{t-t_{n}}{\Delta t} \sum_{i \in \ZZ} M^{\epsilon,n+1}_{i}[m] \indic_{[x_i - h/2, x_i+h/2]}(x) \right] \, .
+	\notag
+\end{align}
+于是，目标是求解如下不动点问题：寻找 $\hat M$，使得
+$$
+	\hat M^{n}_i = M^n_i\big[m^{\epsilon}_{\Delta t, h}[\hat M]\big].
+$$
+回顾可知，$(M^n_i)_{i,n}$ 依赖于 $\hat \ctrl^{\epsilon}_{\Delta t, h}$，而后者本身又依赖于 $(U^n_i)_{i,n}$。因此，与有限差分格式中一样，分布方程和值函数方程是耦合的。
+在适当条件下，即使对于当前讨论中的一阶情形（$\nu=0$）或退化情形，也已经证明了该格式向偏微分方程组连续解的收敛性，详见~\cite{MR3148086,MR3392626,MR3828859}。
+
+
+
+
+
+
+
+
+\clearpage
+
+\section{\bf 求解离散格式的算法}
+\label{AMS-num-sec:sol-strat}
+
+在本节中，我们回顾用于求解上一节所介绍数值格式的若干算法。这些格式的前向--后向结构是主要挑战。我们重新考察第~\ref{AMS-num-sec:LQ} 节中介绍的方法，即不动点迭代和 Newton 迭代。
+
+
+
+\subsection{Picard（不动点）迭代}
+
+
+可能最直接的方法是迭代求解（离散）HJB 方程和（离散）FP 方程，以分别更新值函数和密度的估计，并在每个方程中使用另一个函数的最新估计。如第~\ref{AMS-num-sec:LQ} 节所述，可以引入阻尼系数，该系数甚至可以涵盖虚拟博弈型更新。
+这种方法可用于第~\ref{AMS-num-sec:PDE-scheme} 节前面介绍的有限差分格式或半拉格朗日格式。这里，我们本着~\cite{MR3148086} 的思路，使用半拉格朗日格式对其加以说明。在此情形下，迭代具有算法~\ref{AMS-num-algo:semi-Lagrangian-Picard} 中描述的形式。注意，与~\eqref{AMS-num-eq:semiLagrangian-S_Deltat-h} 对应的步骤需要计算关于控制的下确界。在实现时，我们可以用一个有界集合替换 $\RR^d$，然后将该集合离散化，从而使下确界在有限个值上取得。我们可以不预先固定迭代次数，而是采用如下形式的停止准则：
+$$
+	\|U^{(\epsilon, \mathtt{k}+1)} - U^{(\epsilon, \mathtt{k})}\| < \varepsilon, \quad \hbox{ and}  \quad \|M^{(\epsilon, \mathtt{k}+1)} - M^{(\epsilon, \mathtt{k})}\| < \varepsilon,
+$$
+其中阈值为 $\varepsilon>0$。
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+
+\KwInput{初始猜测 $\tilde M$；阻尼参数 $\delta(\cdot)$；迭代次数 $\mathtt{K}$}
+  \KwOutput{求解~\eqref{AMS-num-eq:semiLagrangian-discrete-KFP}\&\eqref{AMS-num-eq:semiLagrangian-discrete-HJB} 的 $(\hat U^{\epsilon}, \hat M^{\epsilon})$ 的近似}
+  初始化 $\tilde{M}^{(\epsilon, 0)} = \tilde M$ \;
+        \For{$\mathtt{k}=0,1,2,\dots, \mathtt{K}-1$}    
+        { 
+        	令 $U^{(\mathtt{k}+1)}$ 为~\eqref{AMS-num-eq:semiLagrangian-discrete-HJB} 的一个解，其中将 $m$ 替换为由~\eqref{AMS-num-eq:m-epsilon-Deltat-h} 定义的 $m^{\epsilon}_{\Delta t, h}[\tilde{M}^{(\epsilon, \mathtt{k})}]$\;
+	令 $U^{(\epsilon, \mathtt{k}+1)}$ 由~\eqref{AMS-num-eq:SL-u-epsilon-Deltat-h} 定义，其中卷积由离散卷积替代\;
+	令 $M^{(\epsilon, \mathtt{k}+1)}$ 为~\eqref{AMS-num-eq:semiLagrangian-discrete-KFP} 的解，其中~\eqref{AMS-num-eq:SL-hat-ctrl-epsilon-Deltat-h} 被使用 $U^{(\epsilon, \mathtt{k}+1)}$ 得到的离散版本替代，并且梯度由有限差分算子近似 \;
+	令 $\tilde{M}^{(\epsilon, \mathtt{k}+1)} = \delta(\mathtt{k}) \tilde{M}^{(\epsilon, \mathtt{k})} + (1-\delta(\mathtt{k})) M^{(\epsilon, \mathtt{k}+1)}$\;
+	}
+	\Return{$(U^{(\epsilon, \mathtt{K})}, M^{(\epsilon, \mathtt{K})})$} 
+\caption{采用半拉格朗日格式的定点迭代 \label{AMS-num-algo:semi-Lagrangian-Picard}}
+\end{algorithm}
+
+
+
+
+
+\subsection{数值示例：质量集中的例子}
+
+我们借用~\cite{MR3148086} 中的一个例子。 
+不存在终端成本，\textit{即}，$g \equiv 0$，运行成本为：
+$$
+	f(x,m,\ctrl)
+	= \frac{1}{2} |\ctrl|^2 + (x - c^*)^2 + \kappa_{MF} V(x,m),
+$$
+其中 $c^* \in \RR$ 表示目标位置，$\kappa_{MF} \ge 0$ 是控制平均场相互作用强度的参数。第一项惩罚较大的速度，第二项惩罚远离目标，而最后一项涉及平均场相互作用。$V$ 是一个非局部相互作用项，它惩罚位置 $x$ 周围的高密度，其定义为：
+$$
+	V(x,m) = \rho_{\sigma_V} * \big(\rho_{\sigma_V} * m\big)(x),
+$$
+其中我们回顾，$\rho_{\sigma_V}$ 是一个磨光函数，$*$ 表示卷积。对于数值实现，我们使用了 $c^*=0$、$\sigma_V = 0.25$。初始分布由两个均匀部分组成：分别位于 $[-1.25, -0.75]$ 和 $[0.75, 1.25]$ 上。在图~\ref{fig:SEMILAG-numres-m} 中，我们比较了 $\kappa_{MF}$ 取两个值时密度的演化：$0.5$ 或 $0.9$。在第一种情形下，质量集中在 $c^*=0$ 周围。在第二种情形下，由于惩罚更高，质量不会集中在 $0$ 处，并且密度的两个部分保持分离，峰值也更低。我们使用 $T = 4$ 和 $400$ 个时间步，并采用区域 $[-2.5,2.5]$，但为了清晰起见，我们展示截断区域 $[-1.5, 1.5]$ 上的结果。可以注意到，在每个时间步，密度在区域的大部分位置上仍为零，这是因为该模型中不存在扩散（\textit{即}，在我们的记号中 $\nu=0$）。
+
+\begin{figure}%
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}%
+		\centering
+		\includegraphics[width=\textwidth]{FIGURES/SEMI-LAGRANGIAN/test24a/m_epsilon_trunc_new_iter50.pdf}  
+	\end{subfigure}
+	\quad
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+	  	\includegraphics[width=\textwidth]{FIGURES/SEMI-LAGRANGIAN/test25b/m_epsilon_trunc_new_iter100.pdf}
+	\end{subfigure}
+	\caption{\label{fig:SEMILAG-numres-m} 采用半拉格朗日格式求解的示例中分布的演化。左：$\kappa_{MF} = 0.5$；右：$\kappa_{MF} = 0.9$。}
+\end{figure}
+
+
+
+
+
+
+\clearpage
+
+
+\subsection{牛顿法}
+\label{sec:NewtonPDE}
+
+Achdou \textit{等人}在~\cite{MR2888257} 中提出了另一种求解策略，即使用牛顿法求解有限差分系统~\eqref{AMS-num-eq:discrete-HJB-finitediff}\&\eqref{AMS-num-eq:discrete-KFP-finitediff}。其主要思想是直接寻找函数 
+$$
+	\varphi = (\varphi_{\cU}, \varphi_{\cM})^\top
+$$
+ 的零点，其中 $\varphi_{\cU}$ 和 $\varphi_{\cM}$ 的定义使得，对于 $U$ 和 $M \in \RR^{(N_T+1)\times(N_h+1)}$，
+$$
+\begin{cases}
+	\varphi_{\cU}(U,M) = 0
+	&\Leftrightarrow
+	\hbox{ $(U,M)$ solves discrete HJB equation~\eqref{AMS-num-eq:discrete-HJB-finitediff}}
+	\\
+	\varphi_{\cM}(U,M) = 0
+	&\Leftrightarrow
+	\hbox{ $(U,M)$ solves discrete KFP equation~\eqref{AMS-num-eq:discrete-KFP-finitediff}.}
+\end{cases}
+$$
+
+
+令 $J_\varphi$ 表示 $\varphi$ 的雅可比矩阵。牛顿法从初始猜测 $(U^0,M^0)$ 出发，并迭代计算由下式给出的 $(U^{(\mathtt{k}+1)}, M^{(\mathtt{k}+1)})$：
+$$
+	(U^{(\mathtt{k}+1)}, M^{(\mathtt{k}+1)})^\top = (U^{(\mathtt{k})}, M^{(\mathtt{k})})^\top  - J_\varphi(U^{(\mathtt{k})}, M^{(\mathtt{k})})^{-1} \varphi(U^{(\mathtt{k})}, M^{(\mathtt{k})})
+$$
+或者更确切地说，求解 $(\tilde U^{(\mathtt{k}+1)}, \tilde M^{(\mathtt{k}+1)})$：
+$$
+	J_\varphi(U^{(\mathtt{k})}, M^{(\mathtt{k})})  (\tilde U^{(\mathtt{k}+1)}, \tilde M^{(\mathtt{k}+1)}) = - \varphi(U^{(\mathtt{k})}, M^{(\mathtt{k})}),
+$$
+然后令 $(U^{(\mathtt{k}+1)}, M^{(\mathtt{k}+1)})^\top = (\tilde U^{(\mathtt{k}+1)}, \tilde M^{(\mathtt{k}+1)}) + (U^{(\mathtt{k})}, M^{(\mathtt{k})})^\top$。
+
+
+因此，每一步都归结为求解如下形式的线性系统：
+\begin{equation}
+\label{AMS-num-eq:Newton-system-sol}
+	\begin{pmatrix}
+		A_{\cU,\cU} & A_{\cU,\cM}
+		\\
+		A_{\cM,\cU} & A_{\cM,\cM}
+	\end{pmatrix}
+	\begin{pmatrix}
+		U
+		\\
+		M
+	\end{pmatrix}
+	=
+	\begin{pmatrix}
+		G_{\cU}
+		\\
+		G_{\cM}
+	\end{pmatrix},
+\end{equation}
+其中
+\begin{align*}
+	&A_{\cU,\cM}(U,M) = \nabla_{U} \varphi_{\cM}(U,M), 
+	\quad &&A_{\cU,\cU}(U,M) = \nabla_{U} \varphi_{\cU}(U,M), 
+	\\ 
+	&A_{\cM,\cU}(U,M) = \nabla_{M} \varphi_{\cU}(U,M), 
+	\quad &&A_{\cM,\cM}(U,M) = \nabla_{M} \varphi_{\cM}(U,M). 
+\end{align*}
+
+
+对于数值实现，我们注意到 $A_{\cU, \cM}$ 和 $A_{\cM, \cU}$ 是分块对角矩阵，$A_{\cU, \cU} = A_{\cM, \cM}^\top$，并且：
+$$
+	A_{\cU, \cU}
+	=
+	\begin{pmatrix}
+	D_1 & -\frac{1}{\Delta t}\Id_{N_h} & \dots & \dots & 0 
+	\\
+	0 & D_2 & \ddots & 0 & \vdots 
+	\\
+	0 & \ddots & \ddots & \ddots & \vdots
+	\\
+	\vdots & \ddots & \ddots & \ddots & -\frac{1}{\Delta t}\Id_{N_h}
+	\\
+	0 & \ddots & 0 & 0 & D_{N_T}
+	\end{pmatrix},
+$$
+其中 $D_n$ 是对应于如下离散算子的矩阵：
+$$
+	Z = (Z_{i,j})_{i,j}
+	\mapsto
+	\left( \frac{1}{\Delta t} Z_{i,j} - \nu (\Delta_h Z)_{i,j} + [\nabla_h Z]_{i,j} \cdot \nabla_q H_h(x_{i,j}, [\nabla_h U^{(\mathtt{k}), n}]_{i,j})
+	\right)_{i,j},
+$$
+该算子来自离散 HJB 方程~\eqref{AMS-num-eq:discrete-HJB-finitediff} 的线性化。 
+
+关于求解~\eqref{AMS-num-eq:Newton-system-sol} 的可行策略的更多细节，我们参考~\cite[Section 4]{MR3135339} 和~\cite{MR2928376}。我们仅强调，与通常的牛顿法一样，初始猜测 $(U^{(0)}, M^{(0)})$ 的选择十分重要。一种可能的选择是使用相应遍历问题的解（如果该解已知或易于计算）。另一种可能性是利用如下事实：当黏性系数 $\nu$ 较大时，该方法更容易收敛。因此可以使用延拓法：首先求解具有较大 $\nu$ 的问题，然后将其解用作具有较小 $\nu$ 的问题的初始猜测，如此继续，直至达到所需的黏性系数。
+
+
+
+
+\subsection{数值示例：具有拥挤效应的房间疏散}
+\label{subsec:num-evacuation-crowd}
+
+
+我们给出一个借用自~\cite{MR3392611} 的例子，并使用有限差分格式和牛顿法进行求解。该模型描述了一群想要离开房间的行人，该房间由一个包含矩形障碍物的正方形大厅表示（边长为 50 米）。房间有两个门。所选几何结构和初始分布如图~\ref{fig:MFTC-geom-m0} 所示。
+\begin{figure}%
+	\centering
+	\begin{subfigure}[t]{0.4\linewidth}%
+		\centering
+		\includegraphics[height=4cm]{FIGURES/MFTC-MFG/geometry_room_blue_red.png}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.4\linewidth}
+		\centering
+	  	\includegraphics[height=5cm]{FIGURES/MFTC-MFG/m-angle-100_scaleroom-eps-converted-to.pdf}
+	\end{subfigure}
+	\caption{\label{fig:MFTC-geom-m0} 左：几何结构（障碍物以红色表示）。右：$t=0$ 时的密度。}
+\end{figure}
+
+为简单起见，这里我们关注具有局部相互作用的模型；关于此类其他模型，参见\textit{例如}~\cite{LachapelleWolfram-2011-MFG-congestion-aversion,YAJML,MR3765549,MR3498932}，关于具有非局部相互作用的人群运动模型，参见~\cite{MR3763083,MR3392611}。这里，通过成本来考虑拥挤（从而产生所谓的软拥挤，参见下文注~\ref{rem:congestion}）：当前位置处的密度越高，移动的代价就越高。特别地，运行成本不像例~\ref{AMS-num-ex:special-case-sep} 中那样分别依赖于 $\ctrl$ 和 $m$。我们考虑如下哈密顿量，它局部依赖于 $m$ 并刻画拥挤效应：
+  \begin{equation}
+  \label{eq:YAMLcongestion-def-H}
+    H(x, m, p)= \frac {8 |p|^2} {(1+m)^{\frac 3 4}} - \frac 1 {3200} \,.
+  \end{equation} 
+ 我们比较非合作情形与合作情形下密度的演化：
+\begin{enumerate}
+\item 平均场博弈：平均场博弈 PDE 系统~\eqref{AMS-num-eq:PDE-system-MFG} 变为
+\begin{subequations}
+     \begin{empheq}[left=\empheqlbrace]{alignat=2}
+     	\displaystyle
+	- \frac {\partial  u}{\partial t}  -   0.05 \;  \Delta  u
+     + \frac {8} {(1+m)^{\frac 3 4}} \;   |\nabla u|^2 &=      \frac  1  {3200} \,, 
+	\\
+	\displaystyle
+	\frac {\partial  m}{\partial t}  -   0.05\;  \Delta m   - 16 \, \diver\left(   \frac { m \nabla u } {(1+m)^{\frac 3 4}}  \right) &= 0 \,.
+	\label{eq:MFG-KFP-congestion}
+     \end{empheq}
+\end{subequations}
+\item 平均场控制：KFP 方程~\eqref{eq:MFG-KFP-congestion} 保持不变，但 HJB 方程变为
+  \begin{equation*}
+   -\frac {\partial  u}{\partial t}  -   0.05 \;  \Delta  u   
+   + \left( \frac {2} {(1+m)^{\frac 3 4}}    +   \frac {6} {(1+m)^{\frac 7 4}}\right) \;   |\nabla u|^2=      \frac  1  {3200}.
+  \end{equation*}
+\end{enumerate}
+我们选择 $\nu=0.05$。时间范围对应于 $T=50$ 分钟，并且我们不设置任何终端成本，即 $g \equiv 0$。 %
+
+边界由若干部分组成。在与出口对应的部分上，对于 $u$，我们施加 Dirichlet 条件 $u=0$，该条件对应于退出成本。对于 $m$，我们假设定义域外的 $m =0$，因此在这部分边界上也得到 Dirichlet 条件 $m=0$。在与实体墙对应的边界部分上，对于 $u$，我们施加齐次 Neumann 边界条件：$ \frac{\partial u}{\partial n}=0$，这意味着行人的速度与墙壁相切。对于 $m$，我们选取边界条件：
+$\nu \frac {\partial  m}{\partial n}+m     \frac {\partial H} {\partial p} (\cdot, m, \nabla  u )\cdot n=0$，因此在这部分边界上有 $ \frac {\partial  m}{\partial n}=0$。
+
+初始密度 $m_0$ 是分片常数，取值为 $0$ 和 $4$ 人/m$^2$，见图 \ref{fig:MFTC-geom-m0}。
+在 $t=0$ 时，大厅内有 3300 人。%
+
+我们采用 Newton 迭代以及~\S~\ref{AMS-num-sec:fin-diff} 中讨论并最初在 \cite{MR2679575} 中提出的有限差分格式。
+
+
+
+图~\ref{fig:MFTC-MFG-congestion-evol-m} 展示了两种模型在 $t=1$、$2$、$5$ 和 $15$ 分钟时的密度 $m$。
+在两种情形下，行人均在障碍物之间移动，前往通向大厅左右两侧出口的狭窄通道。因此，通道交汇处的密度达到较高值。随后，由于拥堵效应，密度较高区域中的速度较低。如图~\ref{fig:MFTC-MFG-congestion-evol-m} 所示，平均场控制导致
+较低的密度值。这与图~\ref{fig:MFTC-MFG-congestion-evol-totalmass}（左）一致，该图表明平均场控制使人群更快地离开大厅。此外，可以对无政府代价进行数值估计。如图~\ref{fig:MFTC-MFG-congestion-evol-totalmass}（右）所示，无政府代价会随着对人群敏感度的增加而增大，该敏感度由~\eqref{eq:YAMLcongestion-def-H} 中的指数 $\frac{3}{4}$ 刻画。该系数可以替换为参数化拥堵效应（\textit{即}平均场相互作用强度）的值 $\beta\ge0$。我们由此得出结论：当拥堵效应增强时，非合作情形（平均场博弈）相对于平均场控制变得越来越低效。在 $\beta=0$ 的极端情形下，不再存在平均场相互作用，这解释了为何无政府代价（PoA）为 $1$。
+ 
+
+ \begin{remark}
+ \label{rem:congestion}
+ 	此处所考虑的通过成本函数体现的软拥堵形式，与通过密度约束加以考虑的硬拥堵形式形成对比，参见\textit{例如}~\cite{MR3420414,MR3556062}。在后一种情形下，密度不能超过给定阈值，因此在约束起作用的点处，密度曲面会出现平坦区域，数值示例参见\textit{例如}~\cite{MR3772008}。此外，拥堵成本不同于由 $m$ 的增函数表示的人群厌恶成本，后者通常与控制无关。后一种成本是一个惩罚项，无论智能体是否移动，它都会阻止智能体处于拥挤区域。尽管其作用方式与扩散并不完全相同，但这类成本通常会使人群分散，更多细节参见 \S~\ref{sec:auglag-crowd}。
+ \end{remark}
+
+\begin{center}
+   \includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/results_mfg_08-08_grid-40-40-100/5_latex_images_col_light_every1_png/fig_sol_nu0-0625m-angle-98_nocolorbox_nocontours.png} 
+   \quad \includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/results_mfc_08-08_grid-40-40-100/5_latex_images_col_light_every1_png/fig_sol_nu0-0625m-angle-98_nocolorbox_nocontours.png}
+   \\    \vskip -0.65cm
+    \includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/results_mfg_08-08_grid-40-40-100/5_latex_images_col_light_every1_png/fig_sol_nu0-0625m-angle-90_nocolorbox_nocontours.png} 
+  \quad  
+   \includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/results_mfc_08-08_grid-40-40-100/5_latex_images_col_light_every1_png/fig_sol_nu0-0625m-angle-90_nocolorbox_nocontours.png}
+   \\    \vskip -0.65cm
+   \includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/results_mfg_08-08_grid-40-40-100/5_latex_images_col_light_every1_png/fig_sol_nu0-0625m-angle-70_nocolorbox_nocontours.png}
+  \quad  
+  \includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/results_mfc_08-08_grid-40-40-100/5_latex_images_col_light_every1_png/fig_sol_nu0-0625m-angle-70_nocolorbox_nocontours.png}
+     \vskip -0.75cm
+  \captionof{figure}{ \label{fig:MFTC-MFG-congestion-evol-m} 两种模型在不同时间计算得到的密度，$t=1,5$ 和 $15$ 分钟（从上到下）。左：平均场博弈。右：平均场型控制。}
+ \end{center}
+
+
+
+
+
+
+
+
+\begin{center} %
+		\includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/cmp_total_mass_AMS.pdf}
+		\includegraphics[width=0.45\linewidth]{FIGURES/MFTC-MFG/images-poa/price_of_anarchy_new-eps-converted-to.pdf}
+	\captionof{figure}{\label{fig:MFTC-MFG-congestion-evol-totalmass} 左：平均场博弈（红色实线）和平均场型控制（蓝色虚线）下房间内剩余总人数的演化。右：无政府价格关于参数 $\beta$ 的函数。}
+\end{center}
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+
+
+\section{\bf 平均场控制与变分平均场博弈的优化方法}
+\label{AMS-num-sec:optim-variational}
+
+现在，我们将注意力转向这样一类平均场问题：其偏微分方程系统可以解释为一个以连续性方程为约束的能量泛函最小化问题的最优性条件。虽然平均场控制问题总是可以用这种方式表述，但并非所有平均场博弈都具备这一性质。具有这种性质的平均场博弈称为变分平均场博弈。从理论和数值角度来看，上述最小化问题表述非常重要，因为它使我们能够利用优化技术求解问题，而一般的定点问题则不具备这一点。在本节中，我们首先介绍变分平均场博弈的主要思想，然后聚焦于数值方面并描述两种方法。
+
+
+
+
+
+
+
+\subsection{平均场控制与平均场博弈的变分表述}
+
+让我们从平均场控制问题~\eqref{AMS-num-eq:def-J-MFC}--\eqref{AMS-num-eq:dyn-X-general-MFC} 开始。将期望写成关于 $m^{\ctrl}(t, \cdot)$（即 $X_t^{\ctrl}$ 的分布的概率密度）的积分，可得：
+\begin{align*}
+	J^{MFC}(\ctrl) = \int_0^T \int_{\dom} f(x, m^{\ctrl}(t,\cdot), \ctrl(t,x) ) m^{\ctrl}(t,x) dx dt + \int_{\dom} g(x, m^{\ctrl}(T,\cdot)) m^{\ctrl}(T,x) dx. 
+\end{align*}
+因此，成本以确定性方式表述，并需要在由关于 $m^{\ctrl}$ 的 KFP 方程所给出的约束下最小化：
+\begin{equation}
+\label{AMS-num-eq:KFP-ctrl-Q}
+	\frac{\partial m^{\ctrl}}{\partial t}(t,x)  - \nu \Delta m^{\ctrl}(t,x) + \diver\left( m^{\ctrl}(t,\cdot) b(\cdot, m^{\ctrl}(t), \ctrl(t,\cdot)) \right)(x) = 0, 
+	\hbox{ in } (0,T] \times \domT ,
+\end{equation}
+其初始条件为：
+\begin{equation}
+\label{AMS-num-eq:KFP-ctrl-Q-init}
+	m^{\ctrl}(0,x) = m_0(x), 
+	\hbox{ in } \dom.
+\end{equation}
+
+对于平均场博弈，并不总是能够将密度的均衡流刻画为某个泛函的极小化子。可以进行这种刻画的一类特殊博弈是所谓的势平均场博弈，即成本 $f$ 和 $g$ 均由某个势导出的博弈。例如，考虑 $b$ 和 $f$ 如例~\ref{AMS-num-ex:special-case-sep-quadra} 中所设定的情形，并进一步假设存在 $F_0$ 和 $G$，使得
+$$
+	f_0(x,m) = \frac{\delta F_0}{\delta m}(x,m), 
+	\qquad g (x,m) = \frac{\delta G}{\delta m}(x,m).
+$$
+这里的导数应在测度意义下理解，并且我们默认将概率密度 $m$ 与相应的概率测度等同起来。如果我们关注平方可积密度，则可以假设存在 $\bF_0, \bG: \cP_2(\dom) \to \RR$，其中 $\cP_2(\dom)$ 表示 $\dom$ 上具有二阶矩的概率测度集合，使得：
+$$
+	\bF_0(m) - \bF_0(m') = \int_0^1 \int_{\dom} f_0(x, (1-\theta) m + \theta m') (m-m')(dx)  d\theta, \qquad \forall m,m' \in \cP_2(\dom),
+$$ 
+对于 $\bG$ 和 $g$ 也同样成立。于是，我们可以考虑成本泛函
+\begin{align*}
+	\bJ(\ctrl) = \int_0^T \left[ \int_{\dom} \frac{1}{2}|\ctrl(t,x)|^2 m^{\ctrl}(t,x) dx + \bF_0(m^{\ctrl}(t,\cdot)) \right]  dt + \bG(m^{\ctrl}(T,\cdot)). 
+\end{align*}
+其中，与前文相同，$m^{\ctrl}$ 在我们所选择的 $b$ 下求解~\eqref{AMS-num-eq:KFP-ctrl-Q}--\eqref{AMS-num-eq:KFP-ctrl-Q-init}，即
+\begin{equation*}
+	\frac{\partial m^{\ctrl}}{\partial t}(t,x)  - \nu \Delta m^{\ctrl}(t,x) + \diver\left( m^{\ctrl}(t,\cdot) \ctrl(t,\cdot) \right)(x) = 0, 
+	\hbox{ in } (0,T] \times \domT ,
+\end{equation*}
+其中 $m^{\ctrl}(0,x) = m_0(x)$ 属于 $\dom$。在适当条件下，该问题存在极小化子 $\ctrl^*$ 及相应的密度流 $m^{\ctrl^*}$，由此可以恢复满足平均场博弈偏微分方程组~\eqref{AMS-num-eq:PDE-system-MFG} 的平均场博弈纳什均衡 $(\hat m, \hat u)$。
+
+在上述情形下，变分问题直接源于成本可以被解释为一个势这一事实。更一般地，其均衡可以通过某个变分问题的临界点来刻画的平均场博弈称为变分平均场博弈。在这种情况下，PDE 系统既可以被视为平均场博弈的均衡条件，也可以被视为变分问题的临界点条件。在后一问题中，待最小化的能量泛函不一定对应于无穷小参与者的原始成本泛函。关于变分平均场博弈和势平均场博弈的更多细节，我们建议感兴趣的读者参阅\textit{例如}~\cite{Cardaliaguet-2013-notes,MR3644590}。
+
+
+
+
+
+
+\subsection{PDE 驱动的最优控制问题}
+
+\label{AMS-num-subsec:PDE-optc}
+
+
+为明确起见，我们考虑如下问题：在满足 $m\ge 0$ 和
+\begin{equation}
+\label{AMS-num-eq:variational-form-linearcons}
+\begin{cases}
+	\displaystyle
+	\,\, \frac{\partial m}{\partial t}  - \nu \Delta m + \diver w = 0, 
+	&\hbox{ in } (0,T] \times \TT^d ,
+	\\
+	\,\, m|_{t=0} = m_0,  &\hbox{ in }  \TT^d ,
+\end{cases}
+\end{equation}
+的变量对 $(m,w)$ 上，最小化函数
+\begin{equation}
+\label{AMS-num-eq:variational-primal-B}
+	\cB(m,w) = \int_0^T \int_{\TT^d} \left(   \mathfrak{L}(x, m(t,x), w(t,x)) +   \mathfrak{F}(x, m(t,x)) \right) dx dt + \int_{\TT^d}   \mathfrak{G}(x, m(T,x)) dx
+\end{equation}
+其中我们使用如下记号：
+$$
+	  \mathfrak{F}(x,m) = 
+	\begin{cases}
+		\int_0^{m} \tilde f(x, s) ds, & \hbox{ if } m \ge 0,
+		\\
+		+\infty, 	& \hbox{otherwise,}
+	\end{cases}
+	\qquad
+	  \mathfrak{G}(x,m) = 
+	\begin{cases}
+		\int_0^m \, \tilde g(x, s) ds, & \hbox{ if } m \ge 0,
+		\\
+		+\infty, 	& \hbox{otherwise,}
+	\end{cases}
+$$ 
+以及
+$$
+	 \mathfrak{L}(x, m, w) = 
+	\begin{cases}
+		m \tilde \ell \left(x, \frac{w}{m}\right), & \hbox{ if } m > 0,
+		\\
+		0, 		& \hbox{ if } m = 0 \hbox{ and } w = 0,
+		\\
+		+\infty, 	& \hbox{otherwise}.
+	\end{cases}
+$$
+
+为简单起见，我们假设对于每个 $x$，$\tilde \ell(x,\cdot)$ 都是指数大于 $1$ 的幂次型函数（\textit{即}，在相差乘法常数和加法常数的意义下，它由某个 $r>1$ 对应的 $p \mapsto p^{r}$ 从上方和下方控制；详细假设参见\textit{例如}~\cite{MR3358627}）。如果 $\tilde f(x, \cdot)$ 和 $\tilde g(x, \cdot)$ 分别是 $m \mapsto  m f_0(x, m)$ 和 $m \mapsto  m g(x, m)$ 的原函数，并且 $\tilde \ell  = L_0$，那么当成本函数仅局部依赖于 $m$ 时，该问题对应于例~\ref{AMS-num-ex:special-case-sep} 所设定的平均场控制问题。上述类型的问题也可以源自某些平均场博弈的变分表述，Lasry 和 Lions 最初在~\cite{MR2295621} 中对此作了解释。关于这些思想的严格发展，我们建议感兴趣的读者参阅~\cite{MR3399179,MR3358627,MR3498932} 及其中的参考文献。
+
+这里，$w$ 扮演乘积 $m \ctrl$ 的角色。使用这一新变量，连续性方程变为~\eqref{AMS-num-eq:variational-form-linearcons}，它关于 $(m,w)$ 是线性的。在适当条件下，$\cB$ 是凸的，因此这是一个在线性约束下的凸最小化问题。例如，我们通常假设 $\tilde f$ 和 $\tilde g$ 是非递减的，这意味着 $\mathfrak{F}$ 和 $\mathfrak{G}$ 是凸的，并假设 $\tilde \ell(x,\cdot)$ 是凸的幂次型函数，这意味着 $\mathfrak{L}$ 关于 $(m,w)$ 是凸的。
+ 
+
+
+
+
+在这种情况下，该问题具有如下对偶表述：在满足 $u(T,x) = g(x)$ 的 $u$ 上，最大化函数
+ \begin{equation}
+ \label{AMS-num-eq:variational-dual-A}
+ 	\cA(u) = \inf_{m} \cA(u, m)
+ \end{equation}
+其中：
+\begin{align*}
+	\cA(u,m)
+	&=
+	\int_0^T \int_{\TT}
+	m(t,x) \Big(\partial_t u (t,x) + \nu \Delta u(t,x) - \mathfrak{H}(x, m(t,x), \nabla u(t,x))  \Big)
+	dx dt
+	\\
+	&\qquad+
+	\int_{\TT} m_0(x) u(0,x) dx,
+\end{align*}
+这里
+$$
+	\mathfrak{H}(x,m,p) = \sup_{\ctrl} \{ - \mathfrak{L}(x,m,\ctrl) - \langle \ctrl, p \rangle \}.
+$$
+可以证明，$\cA$ 和 $\cB$ 确实互为对偶，\textit{即}（为 $u, m$ 和 $w$ 选取适当的空间）
+$$
+	\textbf{(A)} = \sup_{u} \cA(u) = \inf_{(m,w)} \cB(m,w) = \textbf{(B)}.
+$$
+
+该性质依赖于 Fenchel-Rockafellar 对偶定理~\cite{MR1451876} 以及如下观察：
+$$
+	\textbf{(A)}
+	=
+	- \inf_{u} \Big\{ \cF(u) + \cG(\Lambda(u)) \Big\},
+	\qquad
+	\textbf{(B)} = \min_{(m,w)} \Big\{ \cF^*(\Lambda^*(m,w)) + \cG^*(-m,-w)\Big\}
+$$
+其中 $ \Lambda(u)= \left(\frac{\partial u} {\partial t}   +   \nu \Delta u, \grad u \right)$，
+  \begin{equation*}
+    \cF(u)= \chi_T(u)- \int_{\TT^d} m_0(x)u(0,x)dx, 
+    \qquad
+    \chi_T(u)=
+    \begin{cases}
+    0, & \hbox{ if } u|_{t=T} = g \\
+    +\infty, & \hbox{ otherwise,}
+    \end{cases}
+  \end{equation*}
+\begin{equation*}
+\cG(\varphi_1, \varphi_2)= -\inf_{ m\ge 0    } \int_0^T \int_{\TT^d}    m(t,x) \left( \varphi_1(t,x) -  \mathfrak{H} (x, m(t,x), \varphi_2(t,x) )  \right)    dx dt   .
+\end{equation*}
+$\cF^*, \cG^*$ 是 $\cF,\cG$ 的凸共轭，而 $\Lambda^*$ 是 $\Lambda$ 的伴随算子。
+
+
+
+
+
+
+
+
+\subsection{PDE 驱动的最优控制问题的离散版本}
+\label{AMS-num-subsec:PDE-optc-discrete}
+
+为了实现优化方法，我们需要对上文~\S~\ref{AMS-num-subsec:PDE-optc} 中引入的问题进行离散化。为简化记号，我们考虑一维情形，\textit{即}，$d=1$。我们考虑的是例~\ref{AMS-num-ex:special-case-sep} 所设定的平均场控制问题，在这种情况下，$\tilde \ell(x,p)$ 对应于 $H_0^*(x, -p)$。为简单起见，我们假设对于每个 $x$，$\tilde \ell(x,\cdot)$ 都是指数大于 $1$ 的幂次型函数。
+
+ 我们引入如下空间，分别作为 $m,w,$ 和 $u$ 的离散对应物：
+$$
+	\cM = \RR^{(N_T+1) \times N_h}, 
+	\qquad 
+	\cW = (\RR^2)^{N_T \times N_h}, 
+	\qquad
+	\cU = \RR^{N_T \times N_h}.
+$$
+注意，在每个时空网格点处，我们将有两个表示 $w$ 取值的变量，这对于定义迎风格式是有用的。
+
+我们用 $\tilde H_0$ 表示一个满足性质~\ref{AMS-num-hyp-discH-monotonicity}--\ref{AMS-num-hyp-discH-convexity} 的离散哈密顿量。令 $\tilde H^*_0: \TT^d \times (\RR^2)^d \to \RR \cup \{+\infty\}$ 为其关于变量 $p$ 的凸共轭：
+\begin{equation}
+\label{eq:var:1}  
+	\tilde H^*_0: 
+	(x,\gamma) \mapsto 
+	\tilde H^*_0(x, \gamma)
+	=
+	\max_{p \in \RR^2} \left\{ \langle \gamma , p \rangle - \tilde H_0(x, p) \right\}.
+\end{equation}
+
+
+\begin{example}\label{sec:discr-vers-vari-2}
+	在例~\ref{AMS-num-eq-quadratic-discrete} 的设定下，$\tilde H_0(x, p_1, p_2) = \tfrac{1}{2} |P_K(p_1,p_2)|^2$，其中 $K = \RR_- \times \RR_+$，因此
+	$$
+		\tilde H^*_0(x, \gamma_1, \gamma_2)
+		=
+		\begin{cases}
+			\displaystyle
+			\,\,  \tfrac{1}{2}(|\gamma_1|^2 + |\gamma_2|^2), &\hbox{ if } (\gamma_1,\gamma_2) \in K,
+			\\
+			\,\, +\infty, &\hbox{ otherwise.}
+		\end{cases}
+	$$
+\end{example}
+在~\eqref{AMS-num-eq:variational-primal-B} 中引入的泛函 $\cB$ 的离散对应物 $\tilde\cB: \cM \times \cW \to \RR$ 可以定义为
+\begin{equation}
+\label{eq:var:2}  
+	\tilde\cB:
+	(M,W) \mapsto
+	\sum_{n=1}^{N_T} \sum_{i=0}^{N_h-1} \left[ \tilde{\mathfrak{L}}(x_i, M^n_i, W^{n-1}_i) + \mathfrak{F}(x_i, M^n_i) \right] + \frac{1}{\Delta t}  \sum_{i=0}^{N_h-1}  \mathfrak{G}(x_i, M^{N_T}_i),
+      \end{equation}
+      其中，$\tilde{\mathfrak{L}}: \TT \times \RR \times \RR^2 \to \RR \cup \{+\infty\}$ 是 $\mathfrak{L}$ 的一个离散版本，定义为：
+\begin{equation}
+\label{eq:var:3}  
+	\tilde{\mathfrak{L}}:
+	 (x,m,w) \mapsto \tilde{\mathfrak{L}}(x,m,w)
+	 =
+	\begin{cases}
+		\displaystyle
+		\,\, m \tilde H^*_0\left(x,-\frac{w}{m}\right), &\hbox{ if } m > 0 \hbox{ and } w \in K,
+		\\
+		\,\, 0, &\hbox{ if } m=0, \hbox{ and } w= 0,
+		\\
+		\,\, +\infty, &\hbox{ otherwise.}
+	\end{cases}
+      \end{equation}
+      此外，线性约束~\eqref{AMS-num-eq:variational-form-linearcons} 的一个离散版本可以写为
+      \begin{equation}
+        \label{eq:var:5}  
+	\Sigma(M,W) = (0_\cU, \bar M^0)
+      \end{equation}
+      其中，$0_\cU \in \cU$ 是所有坐标均为 $0$ 的向量，$\bar M^0 = (\bar m_0(x_0), \dots, \bar m_0(x_{N_h-1})) \in \RR^{N_h}$；关于 $\bar m_0$ 的定义，参见~\eqref{AMS-num-eq:discrete-barm-0}；并且
+      \begin{equation}
+\label{eq:var:6}  
+	\Sigma: \cM \times \cW \to \cU \times \RR^{N_h},
+	\qquad
+	(M,W) \mapsto \Sigma(M,W) = (\Lambda(M,W), M^0),
+      \end{equation}
+      其中
+      $$
+      	\Lambda(M,W) = AM + BW,
+	$$
+	这里，$A$ 和 $B$ 分别是热算子和散度算子的离散版本，定义如下：
+\begin{equation}
+\label{eq:def-op-A}
+	A: \cM \to \cU,
+	\qquad
+	(AM)^{n}_i = \frac{M^{n+1}_i - M^{n}_i}{\Delta t} - \nu (\Delta_h M^{n+1})_i, \qquad 0 \le n < N_T, 0 \le i < N_h,
+\end{equation}
+以及
+\begin{equation}
+\label{eq:def-op-B}
+	B: \cW \to \cU,
+	\qquad
+	(BW)^{n}_i = \frac{W^{n}_{i+1,2} - W^{n}_{i,2}}{h} + \frac{W^{n}_{i,1} - W^{n}_{i-1,1}}{h} 
+              \qquad 0 \le n \le N_T, 0 \le i < N_h.
+\end{equation}
+（原始）变分问题~\eqref{AMS-num-eq:variational-primal-B}--\eqref{AMS-num-eq:variational-form-linearcons} 的离散对应问题因而为
+\begin{equation}
+\label{eq:discrete-pb-short}
+	\inf_{\substack{(M,W) \in \cM \times \cW}} \tilde\cB(M,W),  \quad \hbox {subject to } \Sigma(M,W) = (0_\cU, \bar M^0).
+\end{equation}
+可以证明，该问题存在唯一解，并且该解对所有 $i \in \{0, \dots, N_h\}$ 和所有 $n>0$ 均满足 $M^n_i >0$；关于一个特殊情形的更多细节，参见\textit{例如}~\cite[Theorem 3.1]{BricenoAriasetalCEMRACS2017}（另见~\cite[Section 6]{MR3135339} 和~\cite[Theorem 2.1]{MR3772008}，它们分别给出了规划问题和遍历平均场博弈背景下的类似结果）。
+
+
+与连续情形类似，离散问题具有一个对偶表述。此外，我们所选离散化的一个关键特征是，离散问题的最优性条件与第~\ref{AMS-num-sec:fin-diff} 节中给出的、适应于当前设定的有限差分格式相一致。更多细节参见~\cite[Section 3]{achdoulauriere-2020-mfg-numerical} 及其中的参考文献。
+
+
+
+
+
+
+
+
+
+\subsection{ADMM 与原始--对偶方法}
+
+为了与优化问题的数值方法建立联系，我们从更抽象的角度重新表述该问题。考虑如下原始问题：
+\begin{equation}
+\label{AMS-num-eq:generic-primal-constraint}
+	\inf_{\xi \in \RR^{\mathrm{d}}} \varphi(\xi), \hbox{ subject to } \Xi \xi = 0, 
+\end{equation}
+其中，$\varphi: \RR^{\mathrm{d}} \to (-\infty, +\infty]$ 是下半连续的正常凸函数，$\Xi: \RR^{\mathrm{d}} \to \RR^{\mathrm{d}'}$ 是线性算子，并且 $0 \in \RR^{\mathrm{d}'}$。在上述变分平均场问题的设定下，问题~\eqref{AMS-num-eq:generic-primal-constraint} 可以涵盖~\eqref{eq:discrete-pb-short}，其中：
+$$
+	\mathrm{d} = 2(N_T+1) N_T (N_h)^2, \quad \xi = (M,W), \quad \varphi = \tilde\cB, \quad \Xi = \Sigma.
+$$
+
+等价地，上述原始问题可以写为：
+\begin{equation}
+\label{AMS-num-eq:generic-primal-sum}
+	\inf_{\xi \in \RR^{\mathrm{d}}} \varphi(\xi) + \psi(\widetilde \Xi \xi), 
+\end{equation}
+其中，对于 $y \in \RR^{\mathrm{d}'}$，
+$$
+	\psi(y) = \iota_{\{0\}}(y) 
+	= \begin{cases}
+	0, &\hbox{ if } y = 0,
+	\\
+	+\infty, &\hbox{ otherwise},
+	\end{cases}
+	\quad \hbox{ 且 } 
+	\widetilde \Xi = \Xi,
+$$
+或者
+$$
+	\psi(y) = \iota_{\{0\}}(\Xi y) 
+	= \begin{cases}
+	0, &\hbox{ if }  \Xi y = 0,
+	\\
+	+\infty, &\hbox{ otherwise},
+	\end{cases}
+	\quad \hbox{ 且 } 
+	\widetilde \Xi = \mathrm{id}.
+$$
+
+形如~\eqref{AMS-num-eq:generic-primal-sum} 的问题已得到广泛研究，并已提出多种数值方法。在此，我们将重点讨论其中两种：针对对偶问题的增广拉格朗日函数的交替方向乘子法，以及 Chambolle 和 Pock 在~\cite{MR2782122} 中提出的一种原始--对偶方法。这些方法的一些主要优点是，相关收敛性证明易于获得，并且它们可以应用于一阶问题（\textit{即}，不存在扩散且 $\nu=0$）。
+
+\textbf{增广拉格朗日函数与 ADMM。} 我们首先注意到，~\eqref{AMS-num-eq:generic-primal-sum} 接受如下问题作为其对偶形式：
+\begin{equation}
+\label{AMS-num-eq:generic-dual-sum}
+	\inf_{\zeta \in \RR^{\mathrm{d}'}} \varphi^*(- \widetilde{\Xi}^* \zeta) + \psi^*(\zeta), 
+\end{equation}
+其中，$\varphi^*$ 和 $\psi^*$ 分别是 $\varphi$ 和 $\psi$ 的凸共轭，而 $\widetilde{\Xi}^*$ 是 $\widetilde\Xi$ 的伴随算子，\textit{即}，$\langle \widetilde{\Xi} \xi, \zeta \rangle =  \langle \xi, \widetilde{\Xi}^* \zeta \rangle$。在 \S~\ref{AMS-num-subsec:PDE-optc} 和 \S~\ref{AMS-num-subsec:PDE-optc-discrete} 的设定中，$\zeta$ 扮演向量 $U\in\cU$ 的角色，该向量逼近对偶问题~\eqref{AMS-num-eq:variational-dual-A} 中出现的函数 $u$。
+
+
+为便于数值计算，利用目标函数的可加结构并引入一个额外变量，将问题改写为：
+\begin{equation*}
+	\inf_{\zeta, \nu \in \RR^{\mathrm{d}'}} \varphi^*(\nu) + \psi^*(\zeta), \hbox{ subject to } \nu = - \widetilde{\Xi}^* \zeta.
+\end{equation*}
+通过引入拉格朗日乘子 $\lambda$，与该约束优化问题相联系的拉格朗日函数定义为：
+\begin{equation*}
+	\cL(\zeta, \nu, \lambda) = \varphi^*(\nu) + \psi^*(\zeta) + \langle \lambda , \nu + \widetilde{\Xi}^* \zeta \rangle .
+\end{equation*}
+因此，求解对偶问题~\eqref{AMS-num-eq:generic-dual-sum} 等价于寻找 $\cL$ 的一个鞍点，\textit{即}，达到
+\begin{equation}
+\label{AMS-num-eq:generic-LagSaddlePoint}
+	\cL(\zeta^*, \nu^*, \lambda^*) = \sup_{\lambda} \inf_{\zeta, \nu} \cL(\zeta, \nu, \lambda).
+\end{equation}
+的 $(\zeta^*, \nu^*, \lambda^*)$。这启发我们使用最速下降法来逼近 $\lambda \mapsto \inf_{\zeta, \nu} \cL(\zeta, \nu, \lambda)$ 的极大化解，其中 $\inf$ 可以分解为两个独立的优化子问题。有关该方法的更多细节，参见~\cite[Chapter 3]{MR724072} 中的算法 ALG1。这一方法的一种变体是添加一个额外的惩罚项，从而得到所谓的增广拉格朗日函数；对于 $r>0$，其定义为：
+$$
+	\cL_r(\zeta, \nu, \lambda) = \varphi^*(\nu) + \psi^*(\zeta) + \langle \lambda , \nu + \widetilde{\Xi}^* \zeta \rangle  + \frac{r}{2} \|\nu + \widetilde{\Xi}^* \zeta \|_2^2.
+$$
+这个新函数可以解释为对偶问题~\eqref{AMS-num-eq:generic-dual-sum} 的一个修正版的拉格朗日函数，其中惩罚项 $\frac{r}{2} \|\nu + \widetilde{\Xi}^* \zeta \|_2^2$ 被添加到目标函数中。与该惩罚对偶问题相对应的原始问题可以解释为~\eqref{AMS-num-eq:generic-primal-constraint} 的一个正则化版本。注意，对于任意 $r>0$，$\cL$ 和 $\cL_r$ 具有相同的鞍点。
+
+
+应用于该增广拉格朗日函数 $\cL_r$ 的交替方向乘子法的基本思想，是依次迭代更新 $\zeta, \nu$ 和 $\lambda$，如算法~\ref{AMS-num-admm-algo-generic} 所概述。更多细节参见~\cite[Chapter 3]{MR724072} 中的算法 ALG2。这里，$\prox$ 表示近端算子；对于下半连续凸正常函数 $\varphi: \RR^{\mathrm{d}} \to (-\infty, +\infty]$，其定义为：
+$$
+	\prox_\varphi(y) = \argmin_{y'} \left\{ \varphi(y') + \frac{1}{2} \|y' - y\|^2\right\}.
+$$
+它推广了正交投影的概念，其含义是：如果 $K \subseteq \RR^{\mathrm{d}}$ 是一个非空闭凸集，且 $\iota_K: \RR^{\mathrm{d}} \to \{0,+\infty\}$ 表示其示性函数，那么 $\prox_{\iota_K}$ 就是到 $K$ 上的正交投影。在算法~\ref{AMS-num-admm-algo-generic} 中，前两个步骤（关于 $\zeta$ 的优化以及针对 $\nu$ 的近端步骤）在计算方面的代价最高。 
+
+在适当条件下可以保证该方法的收敛性，更多细节参见~\cite[Theorem 8]{MR1168183}。
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+  
+  \KwInput{初始猜测 $(\zeta_0, \nu_0, \lambda_0)$；迭代次数 $\mathtt{K}$}
+  \KwOutput{达到~\eqref{AMS-num-eq:generic-LagSaddlePoint} 的鞍点 $(\zeta^*, \nu^*, \lambda^*)$ 的近似}
+  初始化 $(\zeta^{(0)}, \nu^{(0)}, \lambda^{(0)}) = (\zeta_0, \nu_0, \lambda_0)$ \;
+        \For{$\mathtt{k}=0,1,2,\dots, \mathtt{K}-1$}    
+        { 
+        令 $\zeta^{(\mathtt{k}+1)} = \argmin_{\zeta}\left\{ \psi^*(\zeta) + \langle \lambda^{(\mathtt{k})} , \widetilde{\Xi}^* \zeta \rangle  + \frac{r}{2} \|\nu^{(\mathtt{k})} + \widetilde{\Xi}^* \zeta \|_2^2 \right\}$\;
+        令 
+        \begin{align*}
+        \nu^{(\mathtt{k}+1)} 
+        &= \argmin_{\nu} \left\{ \varphi^*(\nu)  + \langle \lambda^{(\mathtt{k})} , \nu  \rangle  + \frac{r}{2} \|\nu + \widetilde{\Xi}^* \zeta^{(\mathtt{k}+1)} \|_2^2 \right\} 
+        \\
+        &= \prox_{\varphi^*/r}\left( - \frac{1}{r}\lambda^{(\mathtt{k})} - \widetilde{\Xi}^* \zeta^{(\mathtt{k}+1)} \right)
+	\end{align*} \;
+	令 $\lambda^{(\mathtt{k}+1)} = \lambda^{(\mathtt{k})} - r (\nu^{(\mathtt{k}+1)} +\widetilde{\Xi}^* \zeta^{(\mathtt{k}+1)} )$\;
+	}
+	\Return{$(\zeta^{(\mathtt{K})}, \nu^{(\mathtt{K})}, \lambda^{(\mathtt{K})})$}
+\caption{交替方向乘子法  \label{AMS-num-admm-algo-generic}}
+\end{algorithm}
+
+
+
+Benamou 和 Brenier 将 ADMM 推广应用于最优传输，参见~\cite{MR1738163}；Benamou 和 Carlier 在~\cite{MR3395203} 中首次将其用于平均场博弈；另见~\cite{MR3731033}，其中使用多层预条件子将该方法应用于二阶平均场博弈，以及~\cite{MR3575615}，其中将该方法应用于平均场型控制。
+
+当该方法应用于变分问题~\eqref{eq:discrete-pb-short} 的对偶问题时，在第一步中，极小化的一阶最优性条件表明，$U^{(\mathtt{k}+1)}$ 是一个有限差分方程的解；在一般情形 $\nu>0$ 下，该方程对应于一个具有四阶椭圆算子的偏微分方程。此时需要使用预条件子，例如参见~\cite{MR2928376,BricenoAriasetalCEMRACS2017}；但当 $\nu=0$ 时除外，此时可以使用直接求解器。在第二步中，可以在网格的每个点上分别求解极小化问题，从而允许进行并行化计算。
+
+
+
+
+
+
+\textbf{Chambolle 和 Pock 的原始--对偶算法。} 现在我们将注意力转向~\cite{MR2782122} 中提出的一种算法，该算法同时依赖于原始问题和对偶问题~\eqref{AMS-num-eq:generic-primal-sum}--\eqref{AMS-num-eq:generic-dual-sum}。它基于如下拉格朗日函数：
+\begin{equation}
+\label{AMS-num-eq:generic-LagSaddlePoint-PD}
+	\cL_{PD} (\xi, \zeta) = \varphi(\xi) - \psi^*(\zeta) + \langle \zeta, \widetilde{\Xi} \xi \rangle,
+\end{equation}
+其关于各变量的最优性条件为：
+\begin{align*}
+	\begin{cases}
+	\,\, \widetilde{\Xi}^*\hat\zeta &\in -\partial \varphi(\hat\xi) 
+	\\
+	\,\,  \widetilde{\Xi}\hat\xi &\in \partial \psi^*(\hat \zeta)
+	\end{cases}
+	&\quad
+	\Leftrightarrow
+	\quad
+	\begin{cases}
+	\,\, \hat\xi - \tau \widetilde{\Xi}^*\hat\zeta &\in \hat\xi + \tau \partial \varphi(\hat\xi) 
+	\\
+	\,\, \hat\zeta + \gamma \widetilde{\Xi}\hat\xi &\in \hat\zeta + \gamma \partial \psi^*(\hat \zeta)
+	\end{cases}
+	\\
+	&\quad
+	\Leftrightarrow
+	\quad
+	\begin{cases}
+	\,\, \hat \zeta &\in \argmin_\zeta \left\{ \psi^*(\zeta) + \frac{1}{2 \gamma}\| \zeta - (\hat \zeta + \gamma \widetilde{\Xi} \hat \xi )\|^2 \right\}
+	\\
+	\,\, \hat \xi &\in \argmin_\xi \left\{ \varphi(\xi) + \frac{1}{2 \tau} \| \xi - (\hat \xi - \tau \widetilde{\Xi}^* \hat \zeta) \|^2 \right\}
+	\end{cases}
+	\\
+	&\quad
+	\Leftrightarrow
+	\quad
+	\begin{cases}
+	\,\, \hat \zeta &\in \prox_{\gamma \psi^*} (\hat \zeta + \gamma \widetilde{\Xi} \hat \xi ) 
+	\\
+	\,\, \hat \xi &\in \prox_{\tau \varphi} (\hat \xi - \tau \widetilde{\Xi}^* \hat \zeta).
+	\end{cases}
+\end{align*}
+Chambolle 和 Pock 提出的方法基本上是对两个近端步骤进行迭代，并附加一个外推步骤，如算法~\ref{AMS-num-chambollepock-algo-generic} 所概述。当 $\gamma \tau < 1$ 时，该方法已被证明收敛，参见~\cite{MR2782122}。
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+  
+  \KwInput{初始猜测 $(\xi_0, \zeta_0, \tilde \xi_0)$；迭代次数 $\mathtt{K}$}
+  \KwOutput{由~\eqref{AMS-num-eq:generic-LagSaddlePoint-PD} 定义的 $\cL_{PD}$ 的鞍点 $(\xi^*, \zeta^*)$ 的近似}
+  初始化 $(\xi^{(0)}, \zeta^{(0)}, \tilde \xi^{(0)}) = (\xi_0, \zeta_0, \tilde \xi_0)$ \;
+        \For{$\mathtt{k}=0,1,2,\dots, \mathtt{K}-1$}    
+        { 
+        令 $\zeta^{(\mathtt{k}+1)} = \prox_{\gamma \psi^*} (\zeta^{(\mathtt{k})} + \gamma \widetilde{\Xi} \tilde\xi^{(\mathtt{k})} ) $\;
+        令 $\xi^{(\mathtt{k}+1)} = \prox_{\tau \varphi} (\xi^{(\mathtt{k})} - \tau \widetilde{\Xi}^* \zeta^{(\mathtt{k}+1)})$\;
+	令 $\tilde\xi^{(\mathtt{k}+1)} = 2 \xi^{(\mathtt{k}+1)} - \xi^{(\mathtt{k})}$\;
+	}
+	\Return{$(\xi^{(\mathtt{K})}, \zeta^{(\mathtt{K})})$}
+\caption{Chambolle-Pock 方法 \label{AMS-num-chambollepock-algo-generic}}
+\end{algorithm}
+ 
+Brice{\~n}o-Arias、Kalise 和 Silva 在~\cite{MR3772008} 中首次研究了该方法在平稳平均场博弈中的应用；另见~\cite{BricenoAriasetalCEMRACS2017}，其中将其推广到了动态设定。当应用于问题~\eqref{eq:discrete-pb-short} 时，第一步类似于上述 ADMM 方法中的第一步，并且等价于求解一个线性四阶偏微分方程。得益于对 $\cB$ 的选取及其近端算子的形式，第二步更为容易。
+
+
+
+
+
+
+
+\subsection{数值示例：无扩散的人群运动}
+\label{sec:auglag-crowd}
+我们给出一个取自~\cite{MR3575615} 的、具有拥堵效应的人群运动平均场模型示例。相互作用是局部的，并且与~\S~\ref{subsec:num-evacuation-crowd} 中的示例不同，这里不存在扩散，\textit{即}，$\nu=0$。由于运行成本关于 $\ctrl$ 和 $m$ 不可分离，该平均场博弈不具有变分结构。这里我们重点讨论平均场控制问题。
+
+除拥挤效应（即在高密度区域中快速移动的代价较高）外，我们还引入了厌恶效应（\textit{即}，处于拥挤区域中会令人不适）。后一方面由函数 $\ell: \dom \times \RR \to \RR, (x,m) \mapsto \ell(x,m)$ 建模，该函数关于 $m$ 单调递增。区域为 $\dom = [0,1]^2 \backslash [0.4,0.6]^2$，它是一个中心带有障碍物的正方形。拉格朗日量（对应于运行成本）为：
+	$$
+		L(x, m,\ctrl) = (b-1)^{b^*}  m^{\frac{a}{b-1}}|\ctrl|^{b^*} + \ell(x, m), 
+		\qquad 1<b \leq 2, 0\leq a < 1,
+	$$
+	其中 $b^* = b/(b-1)$ 是 $b$ 的共轭指数。  
+	我们通过对偶性定义哈密顿量（使得在 $\partial \Omega$ 上速度向量指向内部）：
+	\begin{align*}
+		 H(x, m, p) &=
+		 \begin{cases}
+		 	\displaystyle \inf_{\ctrl \in \RR^2} \big\{\ctrl \cdot p + L(x, m,\ctrl)\big\} = - m^{-a} |p|^{b} + \ell(x, m), &\mbox{ if } x \in \Omega, \\
+			\displaystyle \inf_{\ctrl \in \RR^2 \,:\, \ctrl \cdot \mathbf{n} \leq 0} \big\{\ctrl \cdot p + L(x, m,\ctrl)\big\}, &\mbox{ if } x \in \partial \Omega,
+		\end{cases}
+	\end{align*}
+	其中 $\mathbf{n}$ 表示外法向量。 
+	
+	
+	如图~\ref{fig:AugLag-MFTC-congestion-m0-uT} 所示，我们取 $m_0$ 在一个角落上均匀分布，并令终端成本 $g$ 在对角处取得最小值。对于此处报告的数值实验，我们取 $a = 0.01, b = 2, \ell(x, m) = 0.01m$。密度的演化如图~\ref{fig:fig:AugLag-MFTC-congestion-evol-m} 所示。可以看到，密度避开了障碍物并最终到达对角处。由于高速度的代价过高（且不存在惩罚高密度的终端成本），大部分质量集中在到达点附近。由于不存在扩散，在每个时间步，密度在区域的大部分范围内仍为零。这里，我们按照本节前文的讨论，对离散问题的增广拉格朗日量使用了 ADMM。 
+	
+	
+\begin{center} %
+		\includegraphics[width=0.45\linewidth]{FIGURES/MFCCONG-ALGO2/cmp-sc/alg2-06-30_c2c/0_latex_images_v2/m-angle-0_v2-eps-converted-to.pdf} %
+		\includegraphics[width=0.45\linewidth]{FIGURES/MFCCONG-ALGO2/cmp-sc/alg2-06-30_c2c/0_latex_images_v2/phi-angle-64_v2-eps-converted-to.pdf}
+	\captionof{figure}{\label{fig:AugLag-MFTC-congestion-m0-uT} 左：初始分布 $m_0$。右：终端成本 $g$。}
+\end{center}
+
+
+
+
+
+\begin{figure}
+\centering
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{FIGURES/MFCCONG-ALGO2/cmp-sc/alg2-06-30_c2c/0_latex_images_v2/m-angle-16_v2-eps-converted-to.pdf}
+  \caption*{$t = T/4$}
+\end{subfigure}%
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{FIGURES/MFCCONG-ALGO2/cmp-sc/alg2-06-30_c2c/0_latex_images_v2/m-angle-32_v2-eps-converted-to.pdf}
+  \caption*{$t = T/2$}
+\end{subfigure}
+\\
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{FIGURES/MFCCONG-ALGO2/cmp-sc/alg2-06-30_c2c/0_latex_images_v2/m-angle-48_v2-eps-converted-to.pdf}
+  \caption*{$t = 3T/4$}
+\end{subfigure}%
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{FIGURES/MFCCONG-ALGO2/cmp-sc/alg2-06-30_c2c/0_latex_images_v2/m-angle-64_v2-eps-converted-to.pdf}
+  \caption*{$t = T$}
+\end{subfigure}
+\caption{密度的演化。}
+\label{fig:fig:AugLag-MFTC-congestion-evol-m}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+
+
+\section{\bf 一种基于单调算子的方法}
+\label{AMS-num-sec:monotone-op}
+
+
+Almulla、Ferreira 和 Gomes 在~\cite{MR3698446} 中针对无限时域平均场博弈提出了两种数值方法，其中解是稳态的。
+ 这些方法在~\cite{GomesSaude2018,GomesYang2018hessian} 中得到了进一步研究。第一种方法适用于变分平均场博弈（或者更一般地，适用于平均场控制），其 PDE 系统对应于某个能量泛函最小化问题中产生的 Euler-Lagrange 条件。
+ 其思想是沿着由该能量生成的梯度流演化，直至到达梯度的一个零点。
+
+
+ 第二种方法可更广泛地应用于无限时域平均场博弈，前提是满足某个单调性条件。
+ 其主要思想是，在某些假设下，PDE 系统的解可以重新表述为某个单调算子的零点。
+ 相应的策略是沿着由该算子生成的流演化，直至找到一个零点。
+
+\subsection{单调流}
+这里我们重点讨论第二种方法。考虑例~\ref{AMS-num-ex:special-case-sep} 中的情形，并进一步假设对分布的依赖是局部的，更具体地说，$f_0(x,m) = \log(m(x))$。遍历型平均场博弈（参见\textit{例如}~\cite{MR2295621}）导出如下 PDE 系统： 
+\begin{subequations}\label{AMS-num-eq:PDE-system-MFG-ergodic}
+     \begin{empheq}[left=\empheqlbrace\,\,\,]{align}
+     	\displaystyle
+	& 0 = \lambda - \nu \Delta u(x) + H_0(x, \grad u(x)) - \log(m(x)), 
+	&&\hbox{ 在 }  \TT^d,
+	\\
+	\displaystyle
+	& 0 = -\nu \Delta m(x) - \diver\left( m \partial_pH_0 (x, \grad u(x)) \right), 
+	&&\hbox{ 在 } \TT^d,
+	\\
+	& \int_{\TT^d} m = 1, \qquad \int_{\TT^d} u = 0, \qquad m>0 \hbox{ 在 } \TT^d,
+     \end{empheq}
+\end{subequations}
+其中未知量为函数 $u$ 和 $m$，以及遍历常数 $\lambda$。 
+令 $A$ 为定义在区域 
+$$
+	\mathcal{D} = \{(u,m) \in W^{2,2}(\TT^d) \times W^{1,2}(\TT^d) \,:\, \inf_{\TT^d} m > 0 \} \subseteq L^2(\TT^d) \times L^2(\TT^d)
+$$ 
+上的算子，其定义为
+$$
+	A \begin{pmatrix}
+	u
+	\\
+	m
+	\end{pmatrix} 
+	= 
+	\begin{pmatrix}
+	 - \nu \Delta m- \diver\left( m(\cdot) \partial_p H_0 (\cdot, \grad u(\cdot)) \right)
+\\
+	 \nu \Delta u - H_0(\cdot, \grad u) + \log(m)
+	\end{pmatrix}。
+$$
+可以验证，该算子
+ 被视为从 $L^2(\TT^d) \times L^2(\TT^d)$ 到 $L^2(\TT^d) \times L^2(\TT^d)$ 的算子时，在其定义域上是单调的，即
+ $$
+ 	\langle A(u,m) - A(u',m'), (u,m) - (u',m') \rangle \ge 0, \qquad (u,m), (u',m') \in \mathcal{D}.
+ $$
+
+
+于是，我们可以考虑如下流 $(u_\tau, m_\tau)_{\tau \ge 0}$，其中对所有 $\tau \ge 0$，均有 $(u_\tau, m_\tau) \in L^2([0,T] \times \TT^d) \times L^2([0,T] \times \TT^d)$：
+$$
+	\frac{d}{d \tau}
+	\begin{pmatrix}
+	u_\tau
+	\\
+	m_\tau
+	\end{pmatrix} 
+	=
+	- A \begin{pmatrix}
+	u_\tau
+	\\
+	m_\tau
+	\end{pmatrix} - \begin{pmatrix}
+	0
+	\\
+	\lambda_\tau
+	\end{pmatrix} ,
+$$
+其中 $\lambda_\tau$ 满足 $\int_{\TT^d} m_\tau = 1$。需要强调的是，此处 $\tau$ 表示流演化中的时间（并回顾我们此处关注的是稳态平均场博弈）。在适当条件下，如果初始点 $(u_0, m_0)$ 位于 $\mathcal{D}$ 中，则该流将保持在 $\mathcal{D}$ 中，直至到达右端项为 $0$ 的点，\textit{即}遍历型平均场博弈 PDE 系统的解。
+ 
+
+
+可以使用 \S~\ref{AMS-num-sec:fin-diff} 中引入的有限差分离散化来逼近这一演化。更具体地，如果状态空间的维数为 $d=1$，则对 $n=0,1,\dots$ 考虑如下系统：
+$$
+	\begin{pmatrix}
+	(D_t U)^n
+	\\
+	(D_t M)^n
+	\end{pmatrix} 
+	=
+	- \begin{pmatrix}
+	 -\nu (\Delta_h M^{n+1})_{i}
+	+ \mathcal{T}_i(U^{n+1}, M^{n+1})
+	\\
+	\lambda^{n+1} + \nu (\Delta_h U^{n+1})_{i}
+	- \tilde{H}_0(x_i, [\grad_h U^{n+1}]_i) 
+	+ \log(M^{n+1}_i)
+	\end{pmatrix},
+$$
+其中 $\lambda^{n+1}$ 满足 $\sum_i M^{n+1}_i = 1$。对任意 $n \ge 0$，假设 $\sum_i M^{n}_i = 1$，并将上述方程组的后一半关于 $i$ 求和，可得
+\begin{align*}
+	& \hbox{ $\lambda^{n+1}$ is such that $\sum_i M^{n+1} = 1$} 
+	\\
+	\Leftrightarrow \quad
+	&0 = N_h \lambda^{n+1} + \sum_{i}  \left[ \nu (\Delta_h U^{n+1})_{i}
+	- \tilde{H}_0(x_i, [\grad_h U^{n+1}]_i) 
+	+ \log(M^{n+1}_i) \right]
+	\\
+	\Leftrightarrow \quad 
+	&\lambda^{n+1} = \psi(U^{n+1}, M^{n+1}),
+\end{align*}
+其中对于 $U, M \in \RR^{N_h+1}$，$\psi(U, M) = - h \sum_{i}  \left[ \nu (\Delta_h U)_{i}
+	- \tilde{H}_0(x_i, [\grad_h U]_i) 
+	+ \log(M_i) \right]$。
+	
+这直接导出一个迭代过程：从初始猜测 $(U^0, M^0)$ 出发，并对递增的 $n=0,1,\dots$ 重复以下步骤：
+\begin{equation}
+\label{AMS-num-eq:monotoneop-discrete-flow}
+	\begin{pmatrix}
+	(D_t U)^n
+	\\
+	(D_t M)^n
+	\end{pmatrix} 
+	=
+	- \begin{pmatrix}
+	 -\nu (\Delta_h M^{n+1})_{i}
+	+ \mathcal{T}_i(U^{n+1}, M^{n+1})
+	\\
+	\psi(U^{n+1}, M^{n+1}) + \nu (\Delta_h U^{n+1})_{i}
+	- \tilde{H}_0(x_i, [\grad_h U^{n+1}]_i) 
+	+ \log(M^{n+1}_i)
+	\end{pmatrix},
+\end{equation}
+在每一步中，该计算都涉及求解一个非线性系统以获得 $(U^{n+1}, M^{n+1})$，例如可以使用 Newton 方法。为处理 $M_i$ 对每个 $i$ 都必须保持为正这一要求（以使 $\log$ 有意义），例如可以采用阻尼 Newton 迭代。 
+
+
+\subsection{数值说明}
+
+ 我们通过两个例子说明该方法。据我们所知，目前仅对具有对数耦合的一阶（\textit{即}，$\nu=0$）稳态问题证明了收敛性，参见~\cite{MR3698446}。对于其他耦合成本，可能需要投影步骤以确保分布的非负性。
+
+
+
+\textbf{测试算例 1（一阶）。} 以下例子取自~\cite{MR3698446}。我们考虑 $d=1, \nu = 0$ 且 $H_0$ 具有如下形式的情形
+$$
+	H_0(x,p) = \frac{1}{2} |p|^2 + b(x) p + V(x).
+$$
+其中 $b(x) = 2 c \pi \cos(2 \pi x)$，这里 $c \in [0,1]$，并且 
+$$
+	V(x) = \sin(2 \pi x).
+$$
+在这种情况下，系统~\eqref{AMS-num-eq:PDE-system-MFG-ergodic} 存在唯一解，其显式表达式为
+$$
+	u^*(x) = c \sin(2 \pi x) \, , 
+	\qquad
+	m^*(x) = \frac{e^{V(x) - \frac{b(x)^2}{2}}}{ \int_{\TT} e^{V(y) - \frac{b(y)^2}{2}} dy } \,, 
+	\qquad 
+	\lambda =  \int_{\TT} e^{V(y) - \frac{b(y)^2}{2}} dy \,.
+$$
+
+然后，我们考虑如下离散哈密顿量（这是对例~\ref{AMS-num-eq-quadratic-discrete} 中所讨论的哈密顿量的修改，以纳入含有 $b$ 和 $V$ 的额外项的影响）：
+$$
+	\tilde{H}_0(x, p_1, p_2) = \tilde{H}_0^{(1)}(p_1, p_2) + \tilde{H}_0^{(2)}(x, p_1, p_2) + V(x) ,
+$$ 
+其中
+$$
+	\tilde{H}_0^{(1)}(p_1, p_2) = \frac{1}{2}|P_K(p_1,p_2)|^2,
+	\qquad
+	\tilde{H}_0^{(2)}(x, p_1, p_2) = 
+	\begin{cases}
+		b(x) p_1, & \hbox{ if } b(x) \le 0,
+		\\
+		b(x) p_2, & \hbox{ otherwise, }
+	\end{cases}
+$$
+其中 $P_K$ 表示到 $K = \RR_- \times \RR_+$ 上的投影。图~\ref{AMS-num-fig:monotone-flow-evol-firstorder} 展示了若干个 $n$ 取值下的 $U^n$ 和 $M^n$（注意，每幅图中的 $n$ 取值并不相同）。图~\ref{AMS-num-fig:monotone-flow-error-firstorder} 展示了两次迭代之间的 $L^2$ 差异以及相对于精确解的 $L^2$ 误差，它们分别定义为：
+\begin{equation}
+\label{AMS-num-eq:monotoneop-def-deltas}
+	\delta^n_u = \sqrt{ h \sum_i | U^{n}_i - U^{n-1}_i|^2 }, \quad 
+	\delta^n_m = \sqrt{ h \sum_i | M^{n}_i - M^{n-1}_i|^2 }, \quad   
+	\delta^n_{tot} = \sqrt{|\delta^n_u|^2 + |\delta^n_m|^2},
+\end{equation}
+和
+\begin{equation}
+\label{AMS-num-eq:monotoneop-def-errors}
+	\text{err}^n_u = \sqrt{ h \sum_i | U^{n}_i - U^{*}_i|^2 }, \quad 
+	\text{err}^n_m = \sqrt{ h \sum_i | M^{n}_i - M^{*}_i|^2 }, \quad   
+	\text{err}^n_{tot} = \sqrt{|\text{err}^n_u|^2 + |\text{err}^n_m|^2}, 
+\end{equation}
+其中 
+$$
+	U^{*}_i =  u^*(x_i),
+	\qquad
+	M^{*}_i = m^*(x_i),
+$$
+由显式解给出。在获得这些图的数值计算中，我们使用了 $c = 0.1$、$N_h = 500$、$T = 20$、$N_T = 1000$。
+
+
+\begin{figure}	
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}%
+		\centering
+		\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2p2/evol_u-eps-converted-to.pdf}
+	\end{subfigure}
+	\quad
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+	  	\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2p2/evol_m-eps-converted-to.pdf}
+	\end{subfigure}
+	\caption{\label{AMS-num-fig:monotone-flow-evol-firstorder} 测试算例 1：按照演化~\eqref{AMS-num-eq:monotoneop-discrete-flow}，若干个 $n$ 取值下的值函数 $U^n$（左）和密度 $M^n$（右）。}
+\end{figure}
+
+
+
+
+\begin{figure}	
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}%
+		\centering
+		\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2p2/l2diff_um-eps-converted-to.pdf}
+	\end{subfigure}
+	\quad
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+	  	\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2p2/l2err_um-eps-converted-to.pdf}
+	\end{subfigure}
+	\caption{\label{AMS-num-fig:monotone-flow-error-firstorder} 测试算例 1：单调流~\eqref{AMS-num-eq:monotoneop-discrete-flow} 的两次迭代之间的差异（左）以及相对于精确解的误差（右），按照正文所述方式计算，见~\eqref{AMS-num-eq:monotoneop-def-deltas}-\eqref{AMS-num-eq:monotoneop-def-errors}。}
+\end{figure}
+
+
+
+
+
+
+\textbf{测试算例 2（二阶）。} 现在，我们考虑一个具有显式解的二阶平均场博弈示例（\textit{即}，具有 $\nu>0$）。据我们所知，尽管尚未证明该格式在这一情形下收敛，但数值结果似乎表明收敛性成立。令 $b=0, \nu=0.5, V(x)=2 \pi^2  (-\kappa \sin(2 \pi x) - \kappa^2 \cos^2(2 \pi x)) - 2 \kappa \sin(2 \pi x)$，其中 $\kappa $ 为常数。则显式解由下式给出
+$$
+	u(x) = \kappa \sin(2 \pi x), \qquad m(x) = \kappa \frac{e^{2u(x)}}{\int e^{2u}}.
+$$
+我们展示 $\kappa = 1.0$ 时的结果。见图~\ref{AMS-num-fig:monotone-flow-evol-secondorder} 和图~\ref{AMS-num-fig:monotone-flow-error-secondorder}。
+
+
+\begin{figure}	
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}%
+		\centering
+		\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2s/evol_u-eps-converted-to.pdf}
+	\end{subfigure}
+	\quad
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+	  	\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2s/evol_m-eps-converted-to.pdf}
+	\end{subfigure}
+	\caption{\label{AMS-num-fig:monotone-flow-evol-secondorder} 测试算例 2：按照演化~\eqref{AMS-num-eq:monotoneop-discrete-flow}，若干个 $n$ 取值下的值函数 $U^n$（左）和密度 $M^n$（右）。}
+\end{figure}
+
+
+
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}%
+		\centering
+		\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2s/l2diff_um-eps-converted-to.pdf}
+	\end{subfigure}
+	\quad
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+	  	\includegraphics[width=\linewidth]{FIGURES/MONOTONEOP/v2s/l2err_um-eps-converted-to.pdf}
+	\end{subfigure}
+	\caption{\label{AMS-num-fig:monotone-flow-error-secondorder} 测试算例 2：单调流~\eqref{AMS-num-eq:monotoneop-discrete-flow} 的两次迭代之间的差异（左）以及相对于精确解的误差（右），按照正文所述方式计算，见~\eqref{AMS-num-eq:monotoneop-def-deltas}-\eqref{AMS-num-eq:monotoneop-def-errors}。}
+\end{figure}
+
+
+
+
+
+
+\clearpage
+
+\section{\bf 基于神经网络逼近的方法}
+\label{AMS-num-sec:NNapprox}
+
+在本节中，我们介绍近期提出的基于机器学习工具的方法。具体而言，我们将使用（人工）神经网络逼近所关注的函数，并使用随机梯度下降优化这些神经网络的权重。我们介绍的第一种方法适用于平均场控制（MFC）（或变分平均场博弈），并直接基于随机表述。第二种方法处理有限状态平均场问题的主方程。\footnote{为简洁起见，此处不讨论其他基于神经网络的方法，例如针对平均场博弈的偏微分方程组或随机微分方程所开发的方法。参见本节和结论中的参考文献。}
+
+
+\subsection{平均场控制的直接优化}
+
+由于平均场控制是一个优化问题，我们首先介绍一种使用机器学习中的随机优化工具、并直接基于平均场控制问题的定义~\eqref{AMS-num-eq:def-J-MFC}--\eqref{AMS-num-eq:dyn-X-general-MFC} 的方法。从这一表述出发，我们进行三步逼近，以获得一个更易于数值处理的新问题。
+
+\textbf{逼近步骤。} 首先，我们将（反馈）控制集限制为具有给定架构的神经网络集合。我们引入新的记号来定义这一控制类。
+我们用下式表示：
+\begin{align*}
+	\mathbf{L}^\psi_{d_1, d_2} = 
+	&\Big\{ \phi: \RR^{d_1} \to \RR^{d_2} \,\Big|\,  \exists (\beta, w) \in  \RR^{d_2} \times \RR^{d_2 \times d_1}, \forall  i \in \{1,\dots,d_2\}, 
+	\\
+	&\qquad \;\phi(x)_i = \psi\Big(\beta_i + \sum_{j=1}^{d_1} w_{i,j} x_j\Big) \Big\} 
+\end{align*}
+输入维数为 $d_1$、输出维数为 $d_2$、激活函数为 $\psi: \RR \to \RR$ 的层函数集合。$\psi$ 的典型选择是 ReLU 函数 $\psi(x) = x^+$ 或 sigmoid 函数 $\psi(x) = 1/(1+e^{-x})$。
+基于这一记号，并用 $\circ$ 表示函数复合，我们定义：
+\begin{align}
+\label{eq:NNarchi-FFC}
+	\bN^\psi_{d_0, \dots, d_{\ell+1}} 
+	= 
+	&\Big\{ \varphi: \RR^{d_0} \to \RR^{d_{\ell+1}} \,\Big|\, \exists (\phi_i)_{i=0, \dots, \ell-1} \in \bigtimes_{i=0}^{i=\ell-1} \mathbf{L}^\psi_{d_i, d_{i+1}}, 
+	\\
+	&\qquad \exists \phi_\ell \in \mathbf{L}^{\mathrm{id}}_{d_{\ell}, d_{\ell+1}}, \varphi = \phi_\ell \circ \phi_{\ell-1} \circ \dots \circ \phi_0  \Big\} \, 
+	\notag
+\end{align}
+具有 $\ell$ 个隐藏层和一个输出层的回归神经网络集合，其中输出层的激活函数为恒等函数。隐藏层数 $\ell$、每层的单元数 $d_0$、$d_1$、$\cdots$、$d_{\ell+1}$，以及激活函数（在当前情形下为单一函数 $\psi$），通常统称为网络架构。一旦架构固定，实际的网络函数 $\varphi\in \bN^\psi_{d_0, \dots, d_{\ell+1}} $ 便由其余的实值参数确定：
+ $$
+ \theta=(\beta^{(0)}, w^{(0)},\beta^{(1)}, w^{(1)},\cdots\cdots,\beta^{(\ell-1)}, w^{(\ell-1)},\beta^{(\ell)}, w^{(\ell)})
+ $$
+它们分别定义函数 $\phi_0$、$\phi_1$、$\cdots$、$\phi_{\ell-1}$ 和 $\phi_\ell$。此类参数的集合记为 $\Theta$。对于每个 $\theta\in\Theta$，由网络计算的函数 $\varphi$ 将记为 $\ctrl_\theta \in \bN^\psi_{d_0, \dots, d_{\ell+1}}$。
+根据上一节的讨论应当清楚，此处我们关注的是 $d_0 = d+1$ 的情形（因为输入为时间和状态）以及 $d_{\ell+1} = \ctrldim$（\textit{即}，控制的维数）。该问题转化为在 $\ctrl \in \bN^\psi_{d+1, d_1, \dots, d_{\ell}, \ctrldim} $ 上最小化由~\eqref{AMS-num-eq:def-J-MFC}--\eqref{AMS-num-eq:dyn-X-general-MFC} 定义的 $J^{MFC}$，或等价地，在 $\theta \in \Theta$ 上最小化函数：
+\begin{align*}
+	\bJ: \theta \mapsto \EE \left[\int_0^T f(X_t^{\ctrl_\theta}, m^{\ctrl_\theta}(t,\cdot), \ctrl_\theta(t,X_t^{\ctrl_\theta}) ) dt + g(X_T^{\ctrl_\theta}, m^{\ctrl_\theta}(T,\cdot)) \right]
+\end{align*}
+其中 $m^{\ctrl_\theta}(t,\cdot)$ 是 $X_t^{\ctrl_\theta}$ 的分布的概率密度，并满足过程 $X^{\ctrl_\theta}$ 在控制 $\ctrl_\theta$ 下求解随机微分方程~\eqref{AMS-num-eq:dyn-X-general-MFC} 的约束。
+
+其次，我们还需要近似密度。一种（计算上）简单的选择是用由 $N$ 个相互作用粒子组成的系统的经验分布来代替它。给定一个反馈控制 $\ctrl$，我们用 $(\underline X_t^{\ctrl})_{t} = (X_t^{1, \ctrl}, \dots, X_t^{N, \ctrl})_{t}$ 表示下式的解：
+\begin{equation}
+\label{AMS-num-eq:NN-MFC-Nparticles}
+	d X_t^{i, \ctrl} = b(X_t^{i, \ctrl}, m^{N, \ctrl}_t, \ctrl(t, X_t^{i, \ctrl})) dt + \sigma d W^i_t, \qquad t \ge 0,
+\end{equation}
+其中
+$$
+	m^{N, \ctrl}_t = \frac{1}{N} \sum_{j=1}^N \delta_{X_t^{j, \ctrl}}, 
+$$ 
+$(W^i)_{i=1,\dots,N}$ 是一族由 $N$ 个相互独立的 $d$ 维布朗运动组成的随机过程，而初始位置 $(X_0^{i, \ctrl})_{i=1,\dots,N}$ 独立同分布，其分布由密度 $m_0$ 给出。注意，在~\eqref{AMS-num-eq:NN-MFC-Nparticles} 中，粒子仅通过漂移函数中的 $m^{N, \ctrl}_t$ 相互作用。控制是分布式的，即 $X^{i, \ctrl}$ 的动态中使用的控制仅是 $t$ 和 $X_t^{i, \ctrl}$ 本身的函数（而不是其他粒子位置的函数）。这一选择的动机在于，具有分布式控制的平均场控制和 $N$-智能体控制问题之间联系紧密，参见~\cite{MR3753660}。因此，我们得到如下新问题：在 $\theta \in \Theta$ 上最小化函数
+\begin{align*}
+	\bJ^{N}: \theta \mapsto \frac{1}{N} \sum_{i=1}^N \EE \left[\int_0^T f(X_t^{i, \ctrl_\theta}, m^{N, \ctrl_\theta}_t, \ctrl_\theta(t,X_t^{i, \ctrl_\theta}) ) dt + g(X_T^{i, \ctrl_\theta}, m^{N,\ctrl_\theta}_T) \right],
+\end{align*}
+其中动态~\eqref{AMS-num-eq:NN-MFC-Nparticles} 采用控制 $\ctrl_\theta$。此处对 $i$ 取平均是为了与 $N$-玩家博弈类比，但由于各智能体同分布，求和中的每个期望都具有相同的值。我们将 $\ctrl_\theta(t,X_t^{i, \ctrl_\theta})$ 解释为玩家 $i$ 在时刻 $t$ 使用的控制。注意，它可以视为一个反馈控制，即时间和玩家 $i$ 状态的函数。由于它并非经验分布 $m^{N, \ctrl_\theta}_t$ 的函数，人们可能会疑惑该问题的解如何能够接近相应平均场控制问题的解。这正是平均场近似发挥作用之处：玩家 $i$ 的控制可以通过其输入 $t$ 隐式依赖于平均场控制分布。直观而言，平均场控制分布 $m^{\ctrl_\theta}(t,\cdot)$ 是 $N$-智能体经验（随机）分布 $m^{N, \ctrl_\theta}_t$ 的确定性替代。这是因为初始分布是给定的，而异质噪声在极限分布的演化中消失。   
+
+最后，对时间区间进行离散化。令 $N_T$ 为正数，令 $\Delta t = T/N_T$ 和 $t_n = n \Delta t$，$n =0,\dots, N_T$。我们考虑如下问题：在 $\theta \in \Theta$ 上最小化函数
+\begin{equation}
+\label{AMS-num-eq:NN-MFC-cost-totalapprox}
+	\bJ^{N, \Delta t}: \theta \mapsto \frac{1}{N} \sum_{i=1}^N \EE \left[\sum_{n=0}^{N_T-1} f(\check X_{t_n}^{i, \ctrl_\theta}, \check m^{N, \ctrl_\theta}_{t_n}, \ctrl_\theta(t_n,\check X_{t_n}^{i, \ctrl_\theta}) ) \Delta t + g(\check X_T^{i, \ctrl_\theta}, \check m^{N,\ctrl_\theta}_T) \right],
+\end{equation}
+满足动态约束：
+\begin{equation}
+\label{AMS-num-eq:NN-MFC-Nparticles-Deltat}
+	\check X_{t_{n+1}}^{i, \ctrl_\theta} = \check X_{t_{n}}^{i, \ctrl_\theta} + b( \check X_{t_{n}}^{i, \ctrl_\theta}, \check m^{N, \ctrl_\theta}_{t_{n}}, \ctrl_\theta(t, \check X_{t_{n}}^{i, \ctrl_\theta})) \Delta t + \sigma \Delta \check W^i_n, \qquad n = 0, \dots, N_T-1,
+\end{equation}
+且初始位置 $(\check X_0^{i, \ctrl_\theta})_{i=1,\dots,N}$ 独立同分布，其分布由密度 $m_0$ 给出，其中
+$$
+	\check m^{N, \ctrl_\theta}_{t_{n}} = \frac{1}{N} \sum_{j=1}^N \delta_{\check X_{t_{n}}^{j, \ctrl_\theta}}, 
+$$ 
+并且 $(\Delta \check W_n^i)_{i=1,\dots,N,n=0,\dots,N_T-1}$ 是服从高斯分布 $\mathcal N(0, \Delta t)$ 的独立同分布随机变量。
+
+
+在对问题和神经网络架构作出适当假设的条件下，当 $N_t, N$ 和神经网络中的参数数量趋于无穷时，$\inf_\theta\bJ^{N, \Delta t}(\theta)$ 与 $\inf_\ctrl J^{MFC(\ctrl)}$ 之间的差异趋于 $0$。更多细节参见~\cite{carmona2019convergence2}。 
+
+
+\textbf{优化过程。} 注意，代价函数~\eqref{AMS-num-eq:NN-MFC-cost-totalapprox} 通常是非凸的，这是由于 $\theta$ 以复杂的方式进入代价中（尤其是因为我们考虑神经网络）。此外，$\theta$ 通常具有（有限但）很高的维数。为了计算一个（近似）优化器 $\theta^*$，可以利用代价~\eqref{AMS-num-eq:NN-MFC-cost-totalapprox} 被写成期望这一事实来运行随机梯度下降（SGD）。该问题中的随机性来自初始位置 $\underline {\check X}_0 = (\check X_0^{i, \ctrl_\theta})_{i}$ 和噪声增量 $(\Delta \underline {\check W}_n)_{n=0,\dots,N_T} = (\Delta \check W_n^i)_{i,n}$。因此，$S = (\underline {\check X}_0, (\Delta \underline {\check W}_n)_{n})$ 将在 SGD 中充当一个随机样本。给定 $S$ 的一个实现和参数 $\theta$ 的一个选取，我们可以按照~\eqref{AMS-num-eq:NN-MFC-Nparticles-Deltat} 构造轨迹 $(\check X_{t_n}^{i, \ctrl_\theta,S})_{i=1,\dots,N, n=0,\dots,N_T}$，并计算由此产生的代价：
+\begin{equation}
+\label{AMS-num-eq:NN-MFC-cost-totalapprox-oneS}
+	\bJ^{N, \Delta t}_S(\theta) = \frac{1}{N} \sum_{i=1}^N \left[\sum_{n=0}^{N_T-1} f(\check X_{t_n}^{i, \ctrl_\theta, S}, \check m^{N, \ctrl_\theta, S}_{t_n}, \ctrl_\theta(t_n,\check X_{t_n}^{i, \ctrl_\theta, S}) ) \Delta t + g(\check X_T^{i, \ctrl_\theta, S}, \check m^{N,\ctrl_\theta, S}_T) \right].
+\end{equation}
+
+该情形下的 SGD 过程总结于算法~\ref{AMS-num-algo:SGD-MFC}。关于 SGD 的更多细节，我们参考，例如，~\cite{MR3797719}。计算成本最高的步骤是计算关于 $\theta$ 的梯度 $\nabla_\theta \bJ^{N, \Delta t}_S(\theta^{(\mathtt{k})})$。然而，现代编程库（如 TensorFlow 或 PyTorch）使我们能够利用反向传播自动完成这一计算，并高效地调整学习率。因此，本方法非常易于实现：与前几节介绍的方法不同，无须手工推导任何 PDE、任何 FBSDE 或任何梯度，而是直接使用平均场控制的定义。
+
+除这一点外，该方法成功的主要原因还包括神经网络的表达能力（即可以使用相对较少的参数很好地近似复杂函数），以及迭代次数 $\mathtt{K}$ 原则上不受限制这一事实（因为样本 $S$ 来自蒙特卡洛模拟，而不是来自有限的数据集）。
+
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{一个初始参数 $\theta_0\in\Theta$；步数 $\mathtt{K}$；学习率序列 $(\beta^{(\mathtt{k})})_{\mathtt{k}=0,\dots,\mathtt{K}-1}$。}
+\KwResult{一个参数 $\theta$，使得 $\ctrl_{\theta}$ 近似最小化 $J^{MFC}$}
+\Begin{
+  \For{$\mathtt{k} = 0, 1, 2, \dots, \mathtt{K}-1 $}{
+    选取 $S  = (\underline {\check X}_0, (\Delta \underline {\check W}_n)_{n})$\;
+    计算梯度 $\nabla_\theta \bJ^{N, \Delta t}_S(\theta^{(\mathtt{k})})$，参见~\eqref{AMS-num-eq:NN-MFC-cost-totalapprox-oneS}\;
+    令 $\theta^{(\mathtt{k}+1)} = \theta^{(\mathtt{k})} - \beta^{(\mathtt{k})} \nabla_\theta \bJ^{N, \Delta t}_S(\theta^{(\mathtt{k})})$ \;
+    }
+  \KwRet{ $\theta^{(\mathtt{K})}$}
+  }
+\caption{用于平均场控制的 SGD\label{AMS-num-algo:SGD-MFC}}
+\end{algorithm}
+
+
+
+\textbf{数值示例：LQ 平均场控制。} 我们重新考察线性二次平均场控制问题，参见~\S~\ref{AMS-num-sec:LQ-sub-MFC}。我们考虑维数为 $d=10$ 的一个例子。为简单起见，我们采用各维度上解均相同的设定。更具体地，我们取：
+$$
+	A = 0, \bar A = 0, 
+	\quad B = Q= \bar Q = S = C = Q_T = \bar Q_T = S_T = \mathrm{Id}, 
+	\quad \sigma = 0.1.
+$$
+初始分布为 $\mathcal{N}(x_0, \sigma_0)$，其中 $x_0 = 2$ 和 $\sigma_0 = 0.2$。
+在实现中，我们采用了如~\eqref{eq:NNarchi-FFC} 中所介绍的前馈全连接神经网络，并使用 sigmoid 激活函数。图~\ref{fig:NN-MFC-LQ-L2errctrl} 展示了神经网络学得的控制 $\ctrl_{\theta^{(\mathtt{k})}}$ 与真实最优控制 $\ctrl^*$ 之间的 $L^2$ 误差随 $k$ 的变化。可以看到，当时间步数或粒子数增加时，误差会减小。尽管最优控制在每个时刻 $t$ 都只是状态的线性函数，但神经网络并不先验地知道这一信息，却仍能成功近似最优解。 
+
+
+
+\begin{center} %
+		\includegraphics[width=0.45\linewidth]{{FIGURES/NNMFC/T_1_valid1/merged_lq-mfc_control_loss-eval_AMS}.pdf}
+	\quad
+		\includegraphics[width=0.45\linewidth]{{FIGURES/NNMFC/T_1_valid1/merged_lq-mfc_control_semilogyODE_AMS}.pdf}
+	\captionof{figure}{\label{fig:NN-MFC-LQ-L2errctrl} 使用神经网络近似的 LQ 平均场控制：维数为 $d=10$、时间步数为 $N_T$、粒子数为 $N$（如图中所示）时的总代价（左）和最优控制上的 $L^2$ 误差（右）。}
+\end{center}
+
+\textbf{扩展。} 该技术用于标准随机最优控制问题已有一段时间，参见\textit{例如}~\cite{parisini1996neural,MR2137498,han2016deep-googlecitations}。其灵活性促成了多种应用，例如在平均场控制的背景下，应用于时滞问题~\cite{fouque2019deep}或（生物）神经网络~\cite{agram2020deep}。尽管该方法非常适合平均场控制，但它无法直接应用于不具有变分结构的平均场博弈。然而，通过将 FBSDE 重写为带有终端惩罚的两个前向 SDE 的平均场最优控制问题，可以扩展该技术以求解 McKean-Vlasov 型前向--后向随机微分方程（FBSDE）；更多细节和数值结果参见\textit{例如}~\cite{carmona2019convergence2}。这一研究方向将 E、Han 和 Jentzen 在~\cite{MR3736669}中针对（非 MKV）FBSDE 所研究的技术推广到了平均场框架。
+
+\subsection{求解有限状态主方程}
+\label{AMS-num-sec:NN-finite-master}
+
+目前为止介绍的所有求解时变平均场控制或平均场博弈的方法均假设初始分布是固定的。因此，通过计算得到从这一给定初始条件出发的分布流。然而，在某些应用中，初始分布并不能被确切获知。一种可能的策略是，针对不同的初始分布反复使用前面介绍的某种方法。然而，其计算成本将高得令人无法承受。因此，能够一次性求解任意初始条件下的问题是很有意义的。这为求解\index{master equation}主方程提供了动机；该方程定义在概率分布空间上，其特征系统是\S~\ref{AMS-num-sec:PDEsystem}中介绍的前向--后向 PDE 系统。此外，主方程还有助于证明$N$人博弈收敛到平均场博弈~\cite{MR3967062}，或者获得大偏差原理~\cite{MR4079435}。
+
+\textbf{有限状态平均场博弈的主方程。} 这里我们关注状态空间有限的情形。按照~\cite[Section 7.2]{MR3752669}中的讨论，令$\cE = \{e_1, \dots, e_d\}$为有限集，并令$\cA \subseteq \RR^\ctrldim$为 Borel 集，二者分别对应状态空间和动作空间。通过将$\cE$的元素与标准基相对应，我们将其视为$\RR^d$的子集，并将$\cP(\cE)$与单纯形$\{m \in \RR^d \,| \, \sum_{i=1}^d m_i = 1\}$等同起来。令$f: \cE \times \cP(\cE) \times \cA \to \RR$和$g: \cE \times \cP(\cE) \to \RR$分别为运行成本函数和终端成本函数。令$\lambda : \cE \times \cP(\cE) \times \cA \to \RR$为跳跃率函数。为简化记号，对每个$m \in \cP(\cE)$，我们用$m(x)$代替$m(\{x\})$。我们将用$\RR^\cE$表示从$\cE$到$\RR$的函数集合。
+
+然后，我们考虑如下平均场博弈均衡问题：求概率密度流$\hat{m}: [0,T] \times \cE \to \RR$和反馈控制$\hat{\ctrl}: [0,T] \times \cE \to \cA$，使其满足以下两个条件：
+\begin{enumerate}
+	\item $\hat{\ctrl}$使下式最小化
+\begin{align*}
+	J^{MFG}_{\hat{m}}: \ctrl \mapsto  \EE \left[\int_0^T f(X_t^{\hat{m}, \ctrl}, \hat{m}(t,\cdot), \ctrl(t,X_t^{\hat{m}, \ctrl}) ) dt + g(X_T^{\hat{m}, \ctrl}, \hat{m}(T,\cdot)) \right]
+\end{align*}
+其约束条件为：过程$X^{\hat{m}, \ctrl} = (X_t^{\hat{m}, \ctrl})_{t \ge 0}$是一个取值于$\cE$的非齐次 Markov 链，其转移概率由如下给出的速率$Q$-矩阵$q^{\hat{m}, \ctrl}: [0,T] \times \cE \times \cE \to \RR$确定：
+\begin{equation}
+\label{AMS-num-eq:q-finite-MFG}
+	q^{\hat{m}, \ctrl}(t, x,x') = \lambda(x, x', \hat{m}(t,\cdot), \ctrl(t,\cdot)), \qquad (t,x,x') \in [0,T] \times \cE \times \cE,
+\end{equation}
+并且$X_0^{\hat{m}, \ctrl}$的分布具有密度$m_0$；
+	\item 对所有$t \in [0,T]$，$\hat{m}(t,\cdot)$是$X_t^{\hat{m}, \hat{\ctrl}}$的分布律。
+\end{enumerate}
+
+为表述最优性条件，我们引入如下定义的 Lagrangian 函数$L: \cE \times \cP(\cE) \times \RR^\cE \times \cA \to \RR$：
+$$
+	L(x, m, h, \ctrl) = \sum_{x' \in \cE} \lambda(x, x', m, \ctrl) h(x') + f(x, m, \ctrl) ,
+$$
+以及哈密顿量：
+$$
+	H(x, m, h) = \sup_{\ctrl \in \cA} -L(x, m, h, \ctrl).
+$$ 
+假设对每个$(x, m, h) \in \cE \times \cP(\cE) \times \RR^\cE$都存在唯一的最大化点，我们记：
+\begin{equation}
+\label{AMS-num-eq:finiteMFG-ctrl-argmax}
+	\ctrl^*(x, m, h) = \argmax_{\ctrl \in \cA} -L(x, m, h, \ctrl).
+\end{equation}
+引入由下式定义的函数$q^*: \cE \times \cE \times \cP(\cE) \times \RR^\cE \to \RR$也将是有用的：
+$$
+	q^*(x,x',m,h) = \lambda\big(x, x', m, \ctrl^*(x,m, h)\big).
+$$
+
+与前向--后向 PDE 系统类似，有限状态平均场博弈的解可以通过一个 ODE 系统来刻画：关于分布$m: [0,T] \times \cE \to \RR$的前向 ODE，以及关于无穷小参与者的值函数$u: [0,T] \times \cE \to \RR$的后向 ODE。具体而言，在适当条件下（参见\textit{例如}~\cite[section 7.2]{MR3752669}），存在唯一的平均场博弈均衡$(\hat{m}, \hat{\ctrl})$，其由下式给出：
+$$
+	\hat{\ctrl}(t,x) = \ctrl^*(x, m(t,\cdot), u(t,\cdot)), 
+$$  
+其中$\ctrl^*$由~\eqref{AMS-num-eq:finiteMFG-ctrl-argmax}定义，而$(u,m)$求解如下前向--后向系统：
+\begin{subequations}\label{AMS-num-eq:ODE-system-finiteMFG}
+     \begin{empheq}[left=\empheqlbrace]{alignat=2}
+     	\displaystyle
+	0 
+	&= - \partial_t u(t, x) + H(x, m(t,\cdot), u(t,\cdot)),
+	&&\quad (t,x) \in [0,T) \times \cE,
+	\label{AMS-num-eq:ODE-system-finiteMFG-HJB}
+	\\
+	\displaystyle
+	0 
+	&= \partial_t m(t, x) - \sum_{x' \in \cE} m(t, x') q^*(x', x, m(t,\cdot), u(t,\cdot)), 
+	&&\quad (t,x) \in (0,T] \times \cE,
+	\label{AMS-num-eq:ODE-system-finiteMFG-KFP}
+	\\
+	&u(T,x) = g(x, m(T,\cdot)), \qquad m(0,x) = m_0(x), 
+	&&\quad x \in \cE.
+	\label{AMS-num-eq:ODE-system-finiteMFG-IT}
+     \end{empheq}
+\end{subequations}
+
+由于$\cE$是有限的，$m(t,\cdot)$和$u(t,\cdot)$可以与向量等同起来，并且每个方程均可视为 ODE。可以采用与前几节中针对连续状态空间情形下出现的 PDE 系统所述方法类似的技术处理该前向--后向系统。例如，可以先利用半隐式格式对时间进行离散化，然后采用不动点迭代，在 HJB 方程与 FP 方程之间交替求解，或者采用 Newton 迭代；参见\S~\ref{AMS-num-sec:sol-strat}。
+
+
+ 由于两个方程之间存在耦合，值函数$u$隐式地依赖于分布$m$。主方程的解使我们能够将这种依赖关系显式化。在当前设定下，该方程具有如下形式（更多细节参见\textit{例如}~\cite[section 7.2]{MR3752669}）：
+ \begin{equation}
+ \label{AMS-num-eq:master-finiteMFG}
+ 	-\partial_t \cU(t,x,m) 
+	+ H(x,m,\cU(t, \cdot, m))
+	- \sum_{x' \in \cE} h^*(m ,\cU(t, \cdot, m))(x') \frac{\partial \cU(t, x ,m)}{\partial m(x')} = 0, 
+ \end{equation}
+其中$(t,x,m) \in [0,T] \times \cE \times \cP(\cE)$，终端条件为$\cU(T,x,m) = g(x,m)$，其中$(x,m) \in \cE \times \cP(\cE)$。这里，$h^*: [0,T] \times \cP(\cE) \times \RR^\cE \times \cE \to \RR$定义为：
+$$
+	h^*(m, u)(x') = \sum_{x \in \cE} \lambda(x, x', m, \ctrl^*(x, m, u)) m(x).
+$$
+当将$m$视为维数为$d$的向量时，记号$\frac{\partial \cU(t, x ,m)}{\partial m(x')}$表示$\RR^d \ni m \mapsto \cU(t,x,m)$关于与$x'$相对应的坐标的（经典）偏导数。主方程与前向--后向系统之间的联系如下。对于每个初始分布$m_0 \in \cP(\cE)$， 
+\begin{equation}
+\label{AMS-num-eq:finiteMFG-link-U-u}
+	\cU(t,x, m^{m_0}(t, \cdot)) = u^{m_0}(t,x), \qquad (t,x) \in [0,T] \times \cE,
+\end{equation}
+其中$(u^{m_0}, m^{m_0})$是从$m(0,\cdot) = m_0$出发的~\eqref{AMS-num-eq:ODE-system-finiteMFG}的解。换言之，前向--后向系统的解充当主方程的特征线，而$\cU$显式地刻画了无穷小参与者的值函数$u$对总体分布$m$的（隐式）依赖关系。
+
+\textbf{深度伽辽金方法的原理。} 注意，主方程~\eqref{AMS-num-eq:master-finiteMFG} 定义在空间 $[0,T] \times \cE \times \cP(\cE) \subset [0,T] \times \cE \times \RR^d$ 上，而一旦状态数 $d$ 较大，该空间便是高维的。使用例如有限差分格式求解高维偏微分方程通常计算成本很高，这是因为网格点的数量随维数呈指数增长。近年来，人们为此开发了若干基于机器学习工具的方法。在此，我们提出使用~\cite{MR3874585} 中引入的深度伽辽金方法（DGM）来求解主方程~\eqref{AMS-num-eq:master-finiteMFG}。其主要思想是首先用一个神经网络替代未知函数，在我们的情形下即用带参数 $\theta$ 的神经网络 $\cU_\theta$ 替代 $\cU$，然后对 $\theta$ 进行优化，以最小化偏微分方程~\eqref{AMS-num-eq:master-finiteMFG} 的残差。该优化通过如下方式使用 SGD 实现：在每次迭代中，根据所选分布在定义域中抽取一个点，然后计算偏微分方程残差关于神经网络参数的梯度，并执行一个梯度步。该过程概述于算法~\ref{AMS-num-algo:DGM-master-finiteMFG} 中。在此，我们固定一个神经网络架构，并用 $\Theta$ 表示具有该架构的神经网络的可能参数集合。对于偏微分方程残差，我们采用如下记号：对于 $\theta \in \Theta$ 和 $S = (t,x,m) \in [0,T] \times \cE \times \cP(\cE)$，
+\begin{equation}
+\label{AMS-num-eq:master-finiteMFG-residual}
+	Res_S(\theta) = \left|\partial_t \cU_\theta(S) - H(x,m,\cU_\theta(S))
+	+ \sum_{x' \in \cE} h^*(m ,\cU_\theta(S))(x') \frac{\partial \cU_\theta(S)}{\partial m(x')}\right|^2.
+\end{equation}
+在实现中，神经网络 $\cU_\theta$ 是 $S$ 的函数，其偏导数可使用自动微分计算。因此，可以在不近似导数的情况下实现残差的计算。随后，可以使用反向传播计算残差关于 $\theta$ 的梯度 $\nabla_\theta Res_S(\theta)$。DGM 相当于尝试最小化损失函数：
+$$
+	L(\theta) = \EE_{S \sim \nu}\left[ Res_S(\theta) \right].
+$$
+
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{初始参数 $\theta_0\in\Theta$；步数 $\mathtt{K}$；学习率序列 $(\beta^{(\mathtt{k})})_{\mathtt{k}=0,\dots,\mathtt{K}-1}$；$[0,T] \times \cE \times \cP(\cE)$ 上的概率分布 $\nu$。}
+\KwResult{参数 $\theta$，使得 $\cU_{\theta}$ 近似求解~\eqref{AMS-num-eq:master-finiteMFG}}
+\Begin{
+  \For{$\mathtt{k} = 0, 1, 2, \dots, \mathtt{K}-1 $}{
+    抽取 $S  = (t,x,m) \sim \nu$\;
+    计算梯度 $\nabla_\theta Res_S(\theta^{(\mathtt{k})})$（见~\eqref{AMS-num-eq:master-finiteMFG-residual}）\;
+    令 $\theta^{(\mathtt{k}+1)} = \theta^{(\mathtt{k})} - \beta^{(\mathtt{k})} \nabla_\theta Res_S(\theta^{(\mathtt{k})})$ \;
+    }
+  \KwRet{ $\theta^{(\mathtt{K})}$}
+  }
+\caption{主方程的 DGM\label{AMS-num-algo:DGM-master-finiteMFG}}
+\end{algorithm}
+
+
+
+
+ 
+
+
+
+\textbf{例 1：网络安全模型。} 我们考虑~\cite{MR3575619} 中引入并在~\cite[Section 7.2.3]{MR3752669} 中重新讨论的一个模型。在该模型中，每个参与者拥有一台计算机，该计算机可以处于已防御（D）或未防御（U）状态，也可以处于已感染（I）或感染易感（S）状态。因此，集合 $\cE$ 包含与四种可能组合相对应的四个元素：$\cE = \{DI, DS, UI, US\}$。动作集合为 $\cA = \{0,1\}$，其中 $0$ 表示参与者对其计算机当前的防护水平（D 或 U）感到满意，而 $1$ 表示她希望改变这一防护水平（\textit{即}，她希望从 D 转为 U，或反之）。在后一种情况下，状态以（固定）速率 $\rho >0$ 更新。在四种状态中的每一种状态下，所有计算机都是不可区分的。当计算机受到感染时，其恢复速率为 $q_{rec}^D$ 或 $q_{rec}^U$，具体取决于它是否处于防御状态。另一方面，一台计算机可能由黑客直接感染：若其处于已防御（相应地，未防御）状态，则感染速率为 $v_H q_{inf}^D$（相应地，$v_H q_{inf}^U$）；也可能由未防御的已感染计算机感染：若其处于未防御（相应地，已防御）状态，则感染速率为 $\beta_{UU}\mu(\{UI\})$（相应地，$\beta_{UD}\mu(\{UI\})$）；还可能由已防御的已感染计算机感染：若其处于未防御（相应地，已防御）状态，则感染速率为 $\beta_{DU}\mu(\{DI\})$（相应地，$\beta_{DD}\mu(\{DI\})$）。简言之，转移率矩阵如下：对于 $m \in \cP(\cE), a \in \cA$，
+$$
+	\lambda(\cdot, \cdot, m, a) 
+	= \left( \lambda(x, x', m, a) \right)_{x,x' \in \cE}
+	= \begin{pmatrix}
+	\dots 	& 		P^{m,a}_{DS \rightarrow DI}	&	 \rho a 	&	0
+	\\
+	q_{rec}^D 	& 	\dots 		&	 0	&	\rho a
+	\\
+	\rho a 	& 	0 		&	 \dots	&	P^{m,a}_{US \rightarrow UI}
+	\\
+	0	&	\rho a	&	q_{rec}^U	& \dots
+	\end{pmatrix}
+$$
+其中
+\begin{align*}
+	&P^{m,a}_{DS \rightarrow DI} = v_H q_{inf}^D + \beta_{DD} m(\{DI\})  + \beta_{UD} m(\{UI\}) ,
+	\\
+	&P^{m,a}_{US \rightarrow UI} = v_H q_{inf}^U + \beta_{UU} m(\{UI\}) + \beta_{DU} m(\{DI\}),
+\end{align*}
+并且，$\dots$ 的每个实例均应替换为其所在行中各元素之和的相反数，其中 $\dots$ 出现在该行的对角线上。在每个时刻，若计算机处于已防御状态，参与者需支付防护成本 $k_D>0$；若计算机受到感染，则需支付惩罚成本 $k_I>0$。
+不存在终端成本，并且给定平均场流 $m$ 和控制 $\ctrl$，时刻 $t$ 的瞬时成本因而为
+$$
+	f(X^{m,\ctrl}_t, m(t,\cdot), \ctrl(t, X^{m,\ctrl}_t)) = -\left[ k_D \indic_{\{DI, DS\}}(X^{m,\ctrl}_t) + k_I \indic_{\{DI, UI\}}(X^{m,\ctrl}_t)\right].
+$$
+注意，在该例中，成本与总体分布无关，平均场相互作用仅出现在动力学中。
+
+我们将上述 DGM 方法应用于该网络安全例中的主方程~\eqref{AMS-num-eq:master-finiteMFG}。我们得到一个神经网络 $\cU_\theta$，它是 $\cU$ 的近似。为了进行比较，我们（分别）针对不同的初始分布 $m_0$ 求解前向--后向系统~\eqref{AMS-num-eq:ODE-system-finiteMFG}，并得到解 $(u^{m_0}, m^{m_0})$。随后，我们比较 $\cU_\theta(t,x,m^{m_0}(t,\cdot))$ 和 $u^{m_0}(t,x)$，由此对于每个 $x \in \cE$ 得到两条曲线。根据关系~\eqref{AMS-num-eq:finiteMFG-link-U-u}，我们知道这两条曲线应当重合，而我们的数值实验验证了这一点；参见图~\ref{AMS-num-fig:finiteMFG-cyber-Master-m0-1}--\ref{AMS-num-fig:finiteMFG-cyber-Master-m0-3}，其中我们考虑了与三个不同初始条件相对应的三个测试情形。这里，我们使用了以下参数值：
+\begin{equation*}
+\left\{
+\begin{split}
+&\beta_{UU} = 0.3,
+\beta_{UD} = 0.4,
+\beta_{DU} = 0.3,
+\beta_{DD} = 0.4,
+\\
+&v_H = 0.2,
+\lambda = 0.5,
+\\
+&q_{rec}^D = 0.1, 
+q_{rec}^U = 0.65, 
+q_{inf}^D = 0.4, 
+q_{inf}^U = 0.3, 
+\\
+&k_D = 0.3, 
+k_I = 0.5.
+\end{split}
+\right.
+\end{equation*}
+在实现中，我们采用了~\eqref{eq:NNarchi-FFC} 中引入的前馈全连接神经网络，并使用 sigmoid 激活函数。对于更高维的问题，其他架构有时更为合适。
+
+
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/Master_v21/test5/testE_diffShapeUcross/test1_mu_evol}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/Master_v21/test5/test1_u_master_evol}.pdf}
+	\end{subfigure}
+	\caption{平均场博弈网络安全示例，测试情形 1：分布 $m^{m_0}$（左）以及 $m_0 = (1/4, 1/4, 1/4, 1/4)$ 时值函数 $u^{m_0}$ 和 $\cU(\cdot, \cdot, m^{m_0}(\cdot))$（右）的演化。} 
+ 	\label{AMS-num-fig:finiteMFG-cyber-Master-m0-1}
+\end{figure}
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/Master_v21/test5/testE_diffShapeUcross/test2_mu_evol}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/Master_v21/test5/test2_u_master_evol}.pdf}
+	\end{subfigure}
+	\caption{平均场博弈网络安全示例，测试情形 2：分布 $m^{m_0}$（左）以及 $m_0 = (1, 0, 0, 0)$ 时值函数 $u^{m_0}$ 和 $\cU(\cdot, \cdot, m^{m_0}(\cdot))$（右）的演化。} 
+ 	\label{AMS-num-fig:finiteMFG-cyber-Master-m0-2}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/Master_v21/test5/testE_diffShapeUcross/test3_mu_evol}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/Master_v21/test5/test3_u_master_evol}.pdf}
+	\end{subfigure}
+	\caption{平均场博弈网络安全示例，测试情形 3：分布 $m^{m_0}$（左）以及 $m_0 = (0, 0, 0, 1)$ 时的值函数 $u^{m_0}$ 和 $\cU(\cdot, \cdot, m^{m_0}(\cdot))$（右）的演化。} 
+ 	\label{AMS-num-fig:finiteMFG-cyber-Master-m0-3}
+\end{figure}
+
+
+
+
+
+
+
+\textbf{示例 2：一个不具有唯一性的示例。} 在上述示例中，主方程的解非常光滑。现在我们将注意力转向 Cecchin \textit{et al.} 在~\cite{MR3981375} 中提出的一个示例，其中主方程具有多个解，但只有一个解满足熵条件。数值结果表明，尽管后一解缺乏光滑性，神经网络仍能对其进行近似。
+
+
+状态空间为 $\cE = \{-1, 1\}$。由于只有两个状态，$\cP(\cE)$ 的每个元素都可以由其均值 $\bar{m} = m(1) - m(-1)$ 刻画。转移率即为控制。换言之，在每个时刻 $t$，给定其状态 $X_t$，一个无穷小参与者可以选择她希望切换其状态的速率 $\ctrl(t, X_t) \in [0,+\infty)$。运行成本和终端成本给定如下：
+$$
+	f(x, m, a) = \frac{a^2}{2}, \qquad g(x,m) = - x \bar{m}.
+$$
+
+主方程具有如下形式：对于 $(t,x,\bar{m}) \in [0,T] \times \{-1,1\} \times [-1,1]$，
+\begin{align*}
+	&-\partial_t \cU(t,x,\bar{m})
+	+
+	\frac{1}{2} \left[ (\Delta^x \cU(t,x,\bar{m}))^- \right]^2 
+	\\
+	&\qquad - \sum_{y \in\{-1,1\}} \frac{1+ y \bar{m}}{2} D^{\bar{m}} \cU(t,x,\bar{m}, y) (\Delta^x \cU(t, y, \bar{m}))^- 
+	= 0,
+\end{align*}
+其终端条件为 $\cU(T,x,\bar{m}) = - x \bar{m}$，其中 $(x,\bar{m}) \in \{-1,1\} \times [-1,1]$。这里，$\Delta^x$ 表示一阶差分，定义为：
+$$
+	\Delta^x \cU(t,x,\bar{m}) = \cU(t,-x,\bar{m}) - \cU(t,x,\bar{m}),
+$$
+关于 $\bar{m}$ 的导数给定为：
+$$
+	D^{\bar{m}} \cU(t,x,\bar{m},1) = 2 \partial_{\bar{m}} \cU(t,x,\bar{m}) = -D^{\bar{m}} \cU(t,x,\bar{m},-1),
+$$ 
+其中，$\partial_{\bar{m}}$ 表示通常意义下关于实变量 $\bar{m}$ 的偏导数。
+
+引入新变量：
+\begin{equation}
+\label{AMS-num-eq:entropy-U-to-Z}
+	\cZ(t,\bar{m}) = \cU(T-t,-1,\bar{m}) - \cU(T-t,1,\bar{m}), \qquad (t, \bar m) \in [0,T] \times [-1,1],
+\end{equation}
+可以验证 $\cZ$ 满足： 
+\begin{equation*}
+\left\{
+\begin{split}
+	& \partial_t \cZ(t,\bar{m}) + \partial_{\bar{m}} \mathfrak{g}(\bar{m}, \cZ(t,\bar{m})) = 0,  &&(t,\bar{m}) \in [-1,1],
+	\\
+	& \cZ(0,\bar{m}) = \mathfrak{f}(\bar{m}), &&\bar{m} \in [-1,1],
+\end{split}
+\right.
+\end{equation*}
+其中
+$$
+	\mathfrak{f}(\bar{m}) = 2 \bar{m},
+	\quad \mathfrak{g}(\bar{m}, z) = \bar{m} \frac{z |z|}{2} - \frac{z^2}{2},
+	\qquad (\bar m, z) \in [-1,1] \times \RR.
+$$
+该方程是一个具有三个解的标量守恒律，其中只有一个是熵解（见~\cite[Proposition 3]{MR3981375}），其表达式为：
+\begin{equation}
+\label{AMS-num-eq:entropy-Z-expli}
+	\cZ(t, \bar{m}) = \frac{2 M(t,\bar{m})}{t |M(t, \bar{m})| + 1},
+\end{equation}
+其中 $M(t, 0) = 0$，并且当 $\bar{m} \neq 0$ 时，$M(t, \bar{m})$ 表示下式的唯一解：
+$$
+	t^2M^3 + t(2-t)M |M| + (1-2t)M - \bar{m} = 0, 
+$$
+其符号与 $\bar{m}$ 相同。
+
+
+图~\ref{AMS-num-fig:finiteMFG-entropy-3D} 展示了由~\eqref{AMS-num-eq:entropy-Z-expli} 给出的真实 $\cZ$，以及在神经网络经过训练以近似 $\cU$ 后通过变量变换~\eqref{AMS-num-eq:entropy-U-to-Z} 得到的结果。可以看到，真实的 $\cZ$ 在时刻 $t = 0.5$ 之后于 $\bar{m}$ 处出现不连续性，而神经网络由于采用 sigmoid 函数作为激活函数，因此是连续的。然而，图~\ref{AMS-num-fig:finiteMFG-entropy-2D} 表明，$L^2$ 误差随 SGD 迭代次数增加而衰减；当迭代次数足够大时，神经网络能够近似该不连续性，如终端时刻 $T=1$ 的结果所示。 
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/ENTROPY-2STATES/test19b_T1/master_shape3d-exact_iter500000-eps-converted-to}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/ENTROPY-2STATES/test19b_T1/master_shape3d-algo_iter500000-eps-converted-to}.pdf}
+	\end{subfigure}
+	\caption{不具有唯一性的示例：由解析公式~\eqref{AMS-num-eq:entropy-Z-expli} 得到的 $\cZ$（左），以及应用深度 Galerkin 方法计算 $\cU$，再由~\eqref{AMS-num-eq:entropy-U-to-Z} 推导出 $\cZ$（右）。\label{AMS-num-fig:finiteMFG-entropy-3D}} 
+\end{figure}
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/ENTROPY-2STATES/test19b_T1/master_error_vs_iter_log-eps-converted-to}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MASTER-FINITEMFG/ENTROPY-2STATES/test19b_T1/master_cmp_1d_lines_iter500000-eps-converted-to}.pdf}
+	\end{subfigure}
+	\caption{不具有唯一性的示例：误差随 SGD 迭代次数的变化（左），以及 $\cZ(T,\cdot)$（右），其中真实解以蓝色表示，而神经网络学习得到的解在迭代次数分别为 $1500$、$4500$ 和 $5\times10^5$ 时以绿色、黄色和红色表示。
+ 	\label{AMS-num-fig:finiteMFG-entropy-2D}} 
+\end{figure}
+
+
+
+在本节结束时，我们指出，DGM 方法也可以用于求解刻画平均场博弈或平均场控制解的 HJB-KFP 偏微分方程组；更多细节见~\cite{al2018solving,carmona2019convergence1}。
+
+
+
+\clearpage
+
+\section{\bf 模型无关方法概览}
+\label{AMS-num-sec:modelfree}
+
+
+前述所有方法都以某种方式依赖于成本函数 $f$ 和 $g$ 以及漂移项 $b$ 和波动项 $\sigma$ 已知这一事实。然而，在许多应用中，构建一个现实且准确的模型是一项艰巨的任务。有时无法猜测动态系统的形式，或成本产生的方式。这为研究所谓的模型无关方法提供了动机。强化学习（RL）理论对这一框架进行了形式化，并已发展出许多算法。直观地说，在环境中演化的智能体可以采取行动，并观察其行动的后果：环境的状态（或她自身的状态）发生变化，同时该智能体产生一项成本。智能体并不知道新状态和成本是如何计算的。于是，智能体的目标是通过反复试错学习最优行为（\textit{即}，使未来成本之和最小的行为）。如果多个智能体试图同时学习，并且它们的行动相互影响彼此的成本，则问题会更加复杂。我们简要介绍强化学习与平均场问题之间联系的一些最新进展。首先讨论平均场控制；作为一个控制问题，它可以被重新表述为强化学习问题。随后讨论平均场博弈，它要求学习一个 Nash 均衡。
+
+
+\subsection{用于平均场控制的强化学习}
+
+如第~\ref{AMS-num-sec:optim-variational} 节所述，平均场控制问题可以视为由概率分布的演化驱动的最优控制问题。这对应于中央规划者的视角，即试图找到智能体为最小化社会成本而应采用的最优控制。为了更容易地纳入强化学习框架，我们重新考察~\S~\ref{AMS-num-sec:NN-finite-master} 中所考虑的有限状态空间和有限动作空间设定。这里我们考虑无限时域折现情形，而非有限时域设定。我们修改控制类，不再考虑关于 $t$（时间）和 $x$（个体状态）的函数，而是考虑关于 $m$（总体分布）和 $x$（个体状态）的函数。直观而言，这一选择背后的原因是，在许多情形下，最优控制对时间的依赖仅通过总体分布体现。与平均场博弈相对应的平均场控制问题是寻找一个反馈控制 $\ctrl^*: \cP(\cE) \times \cE \to \cA$，使下式最小化：
+\begin{align*}
+	J^{MFC}: \ctrl \mapsto  \EE \left[\int_0^{+\infty} e^{-\beta t} f(X_t^{\ctrl}, m^\ctrl(t,\cdot), \ctrl(m^\ctrl(t,\cdot),X_t^{\ctrl}) ) dt  \right]
+\end{align*}
+其约束条件为：过程 $X^{\ctrl} = (X_t^{\ctrl})_{t \ge 0}$ 是一个非齐次的 $\cE$-值马尔可夫链，其转移概率由~\eqref{AMS-num-eq:q-finite-MFG} 给出的速率 $q^{m^\ctrl, \ctrl}: [0,T] \times \cE \times \cE \to \RR$ 的 $Q$-矩阵决定，并且 $m^\ctrl$ 是与 $X^{\ctrl}$ 相对应的分布流。
+
+注意，该成本可以重写为：
+$$
+	J^{MFC}(\ctrl) = \int_0^{+\infty} e^{-\beta t} \sum_{x\in\cE} f(x, m^\ctrl(t,\cdot), \ctrl(m^\ctrl(t,\cdot),x) ) m^\ctrl(t,x) dt ,
+$$
+其约束条件为 $m^\ctrl$ 求解一个类似于~\eqref{AMS-num-eq:ODE-system-finiteMFG-KFP}、但由 $\ctrl$ 控制的演化方程：
+$$
+	\partial_t m^\ctrl(t,x) = \sum_{x' \in \cE} m^\ctrl(t,x') \lambda(x', x, m^\ctrl(t,\cdot), \ctrl(m^\ctrl(t,\cdot), x')), \qquad (t,x) \in [0,T] \times \cE.
+$$
+
+使用网格 $\{t_n = n \Delta t, n = 0,1,2,\dots\}$ 对时间进行离散化，其中 $\Delta t>0$，则该成本近似等于：
+\begin{align*}
+	J^{MFC, \Delta t}(\ctrl) 
+	&= \sum_{n=0}^{+\infty} e^{-\beta t_n} \sum_{x\in\cE} f(x, m^\ctrl_n, \ctrl(m^\ctrl_n,x) ) m^\ctrl_n(x) \Delta t 
+	\\
+	&=  \sum_{n=0}^{+\infty} \gamma^n \tilde f(m^\ctrl_n, \ctrl(m^\ctrl_n,\cdot)),
+\end{align*}
+约束条件为：
+$$
+	m^\ctrl_{n+1} 
+	= (m^\ctrl_{n})^\top (I + P^{\ctrl(m^\ctrl_{n},\cdot), m^\ctrl_{n}} \Delta t)
+	=: \Phi(m^\ctrl_{n}, \ctrl(m^\ctrl_{n},\cdot)), \qquad n = 0, 1, 2, \dots
+$$
+并给定初始条件 $m^\ctrl_0$，其中 $\gamma = e^{-\beta \Delta t}$，$\tilde f: \cP(\cE) \times \cA^{\cE} \to \RR$ 定义为：
+$$
+	\tilde f(m, \tilde\ctrl) = \sum_{x\in\cE} f(x, m, \tilde\ctrl(x) ) m(x) \Delta t, \qquad (m, \tilde\ctrl) \in \cP(\cE) \times \cA^\cE, 
+$$
+以及
+$$
+	P^{\tilde\ctrl, m}(x', x) = \lambda(x', x, m, \tilde\ctrl(x')), \qquad (x',x,m,\tilde\ctrl) \in \cE \times \cE \times \cP(\cE) \times \cA^\cE.
+$$
+因此，通过将分布 $m^\ctrl$ 视为状态（这与中央规划者的视角一致），该问题便纳入了马尔可夫决策过程（简称 MDP）的框架。不同于考虑在 $\cE$ 中演化的 $X^\ctrl$ 的动态，该 MDP 对应于由在 $\cP(\cE)$ 中演化的 $m^\ctrl$ 的动态所驱动的“提升”问题。  
+与该最优控制问题相关联的值函数 $V$ 表示从给定状态出发的最优（无限时域折现）后续成本。这里，状态是总体分布，因此值函数是 $m \in \cP(\cE)$ 的函数：
+$$
+	V(m) = 
+	\inf_{\ctrl : \cP(\cE) \times \cE \to \cA} \sum_{n=0}^{+\infty} \gamma^n \tilde f(m^\ctrl_n, \ctrl(m^\ctrl_n,\cdot)), \quad \hbox{ with } m^\ctrl_0 = m.
+$$
+ 然而，即使我们能够计算 $V$，在成本函数和动态未知时，如何恢复最优控制仍不明确。从这一角度看，一个更有用的函数是所谓的 $Q$-函数。它是状态和动作的函数，表示在从指定的状态--动作对出发（随后采取最优行为）的条件下的最优后续成本。在我们的情形下，它具有如下形式： 
+ $$
+ 	Q(m,\tilde\ctrl) = \tilde f(m,\tilde\ctrl) + \gamma \inf_{\ctrl : \cP(\cE) \times \cE \to \cA} \sum_{n=0}^{+\infty} \gamma^n \tilde f(m^\ctrl_n, \ctrl(m^\ctrl_n,\cdot)), \quad (m, \tilde\ctrl) \in \cP(\cE) \times \cA^{\cE},
+ $$
+ 其中，$m^\ctrl_0 = \Phi(m, \tilde\ctrl)$ 是从 $m$ 出发并使用动作 $\tilde\ctrl$ 向前推进一个时间步所得到的分布，并且对于 $n \ge 0$，$m^\ctrl_{n+1} = \Phi(m^\ctrl_{n}, \ctrl(m^\ctrl_{n},\cdot))$。我们有
+ \begin{equation}
+ \label{eq:MFCQ-link-VQ}
+ 	V(m) = \inf_{\tilde\ctrl \in \cA^{\cE}} Q(m, \tilde\ctrl), \qquad m \in \cP(\cE),
+ \end{equation}
+并且可以很容易地由 $Q$ 恢复最优控制： 
+\begin{equation}
+ \label{eq:MFCQ-link-ctrloptQ}
+ 	\ctrl^*(m,\cdot) = \arginf_{\tilde\ctrl \in \cA^{\cE}} Q(m, \tilde\ctrl).
+\end{equation}
+ 这是状态--动作值函数 $Q$ 相较于（仅依赖状态的）值函数 $V$ 的主要优势之一。 
+ 此外，可以证明 $Q$ 满足动态规划方程（或 Bellman 方程）：
+$$
+	 Q(m,\tilde\ctrl) = \tilde f(m,\tilde\ctrl) + \gamma \inf_{\tilde\ctrl' \in \cA^{\cE}} Q(\Phi(m, \tilde\ctrl), \tilde\ctrl'), \quad (m,\tilde\ctrl) \in \cP(\cE) \times \cA^{\cE}.
+$$
+因此，计算 $Q$ 的一种直接策略是，将前一次估计代入上式右端，以迭代方式更新近似。这导出了所谓的（同步）$Q$-学习更新：
+\begin{equation}
+\label{eq:MFC-Q-updates}
+	 Q^{(\mathtt{k+1})}(m,\tilde\ctrl) = \tilde f(m,\tilde\ctrl) + \gamma \inf_{\tilde\ctrl' \in \cA^{\cE}} Q^{(\mathtt{k})}(\Phi(m, \tilde\ctrl), \tilde\ctrl'), \quad (m,\tilde\ctrl) \in \cP(\cE) \times \cA^{\cE}.
+\end{equation}
+注意，为执行此类更新，我们只需要获得成本 $\tilde f(m,\tilde\ctrl)$ 和下一状态 $\Phi(m, \tilde\ctrl)$；它们可以由某个环境提供，而该环境的内部运行机制并不向学习智能体公开。换言之，为执行 $Q$-学习更新，我们不需要知道函数 $\tilde f$ 和 $\Phi$。从这个意义上说，该算法是无模型的。
+
+为实现该方法，我们需要对 $Q$ 函数进行有限维近似。这里我们不讨论函数逼近技术。为简单起见，我们用一个记为 $\tilde\cP_\cE$ 的离散版本替代 $\cP(\cE)$，其中包含 $\cP(\cE)$ 的有限多个点。由于 $\cA^\cE$ 也是有限集，因此可以用 $Q$-函数在 $\tilde\cP_\cE \times \cA^\cE$ 上的取值来近似它，\textit{即}，用矩阵 $\tilde Q \in \RR^{|\tilde\cP_\cE| \times |\cA^\cE|}$ 来近似。更新规则变为：
+\begin{equation}
+\label{eq:MFC-Q-updates-proj}
+	 \tilde Q^{(\mathtt{k+1})}(\tilde m,\tilde\ctrl) = \tilde f(\tilde m,\tilde\ctrl) + \gamma \inf_{\tilde\ctrl' \in \cA^{\cE}} \tilde Q^{(\mathtt{k})}(\Pi_{\tilde \cP_\cE} \Phi(\tilde m, \tilde\ctrl), \tilde\ctrl'), \quad (\tilde m, \tilde\ctrl) \in \tilde\cP(\cE) \times \cA^{\cE}.
+\end{equation}
+其中，$\Pi_{\tilde P_\cE}: \cP_\cE \to \tilde \cP_\cE$ 表示到 $\tilde\cP_\cE$ 上的投影（注意，$\Phi(\tilde m, \tilde\ctrl)$ 不一定是 $\tilde P_\cE$ 的元素）。 
+
+注意，在当前设定下，实际上只需与环境交互一次，并对每个二元组 $(\tilde m, \tilde \ctrl) \in \tilde \cP_\cE \times \cA^\cE$ 查询 $(\tilde f(\tilde m,\tilde \ctrl), \Phi(\tilde m, \tilde \ctrl))$，便可获得计算 $\tilde Q$ 函数所需的关于成本和动态的全部信息。然而，当动态具有随机性时，例如由于存在公共噪声，这一点便不再成立。 
+ 此外，当状态数 $|\tilde\cP_\cE|$ 或动作数 $|\cA^\cE|$ 很大时，在每次迭代中针对每个二元组 $(\tilde m,\tilde \ctrl) \in \tilde\cP_\cE \times \cA^\cE$ 更新 $\tilde Q$ 的计算代价高得难以承受。可以采用异步更新或函数逼近来提高效率。 
+
+为便于说明，我们展示基本平均场 $Q$-学习方法~\eqref{eq:MFC-Q-updates-proj} 在~\S~\ref{AMS-num-sec:NN-finite-master} 所介绍的网络安全模型上的表现，不过现在采用的是控制一大群计算机的中央规划者的视角。回顾一下，$\cE = \{DI, DS, UI, US\}$ 有四个元素。 
+我们将 $\cP(\cE)$ 替换为：
+$$
+	\tilde\cP_\cE = \left\{ (m_{DI}, m_{DS}, m_{UI}, m_{US} ) \in \cG_{N_m}^4 \,\big|\, m_{DI} + m_{DS} + m_{UI} + m_{US} = 1 \right\},
+$$
+其中，$\cG_{N_m}$ 是 $[0,1]$ 上具有 $N_m \ge 2$ 个点的均匀网格，且包含 $0$ 和 $1$。经过 $\mathtt{K}$ 步 $Q$-学习后，我们得到 $Q$-函数的一个近似 $\tilde Q^{(\mathtt{K})}$，进而可以利用~\eqref{eq:MFCQ-link-ctrloptQ} 恢复最优控制的一个近似 $\tilde\ctrl^{\mathtt{K}}$，
+即：$\tilde\ctrl^{\mathtt{K}}(m, \cdot) = \argmax_{\tilde \ctrl \in \cA^\cE} \tilde Q^{(\mathtt{K})}(\Pi_{\tilde P_\cE} m, \tilde \ctrl)$。 
+ 对于三个不同的初始条件，我们将该控制 $\tilde\ctrl^{\mathtt{K}}$ 所诱导的分布流与最优受控分布流进行比较。与~\eqref{eq:MFCQ-link-VQ} 一致，我们还沿最优流 $(m^{\ctrl^*}(t))_{t\in[0,T]}$ 比较值函数 $V(m^{\ctrl^*}(t))$ 与 $\max_{\cA^\cE}\tilde Q^{(\mathtt{K})}(\Pi_{\tilde P_\cE} m^{\ctrl^*}(t), \cdot)$。图~\ref{AMS-num-fig:finiteMFCQ-cyber-Master-m0-1}--\ref{AMS-num-fig:finiteMFCQ-cyber-Master-m0-3} 展示了三个初始条件下的结果。可以看出，学习得到的 $Q$-函数与 $V$ 值函数近似吻合。   
+在这些模拟中，我们使用了 $N_m = 30$、$\gamma = 0.5$，以及以下参数：
+\begin{equation*}
+\left\{
+\begin{split}
+&\beta_{UU} = 0.3,
+\beta_{UD} = 0.4,
+\beta_{DU} = 0.3,
+\beta_{DD} = 0.4,
+\\
+&v_H = 0.6,
+\lambda = 0.8,
+\\
+&q_{rec}^D = 0.5, 
+q_{rec}^U = 0.4, 
+q_{inf}^D = 0.4, 
+q_{inf}^U = 0.3, 
+\\
+&k_D = 0.3, 
+k_I = 0.5.
+\end{split}
+\right.
+\end{equation*}
+
+如前所述，这里给出更新规则~\eqref{eq:MFC-Q-updates-proj} 仅仅是为了说明平均场设定下 $Q$-学习的基本思想。 
+ 关于平均场 MDP 和平均场控制的 $Q$-学习的更多细节，我们参见~\cite{MR2968782,carmona2019model,gu2019dynamic,gu2020qlearning,motte2019mean}。其他方法也得到了研究，例如策略梯度，参见~\cite{subramanianpolicy}；对于线性--二次平均场控制问题，可以证明该方法以线性速率收敛，参见~\cite{carmona2019linear}。
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MFCQ/test10f7a3/test_1_mu_Qlearning}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MFCQ/test10f7a3/test_1_V_Qlearning}.pdf}
+	\end{subfigure}
+	\caption{平均场控制网络安全示例，测试情形 1：$m_0 = (1/4, 1/4, 1/4, 1/4)$。左图：分布 $m^{m_0}$ 在最优控制下（$m_{ODE}$）或使用近似 $Q$ 函数进行控制时（$m_Q$）的演化。右图：沿最优流的 $V$ 函数（$V_{opt}$）和近似 $Q$ 函数（$V_{Q}$）。}    
+ 	\label{AMS-num-fig:finiteMFCQ-cyber-Master-m0-1}
+\end{figure}
+
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MFCQ/test10f7a3/test_2_mu_Qlearning}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MFCQ/test10f7a3/test_2_V_Qlearning}.pdf}
+	\end{subfigure}
+	\caption{平均场控制网络安全示例，测试情形 2：$m_0 = (1, 0, 0, 0)$。左图：分布 $m^{m_0}$ 在最优控制下（$m_{ODE}$）或使用近似 $Q$ 函数进行控制时（$m_Q$）的演化。右图：沿最优流的 $V$ 函数（$V_{opt}$）和近似 $Q$ 函数（$V_{Q}$）。}   
+ 	\label{AMS-num-fig:finiteMFCQ-cyber-Master-m0-2}
+\end{figure}
+
+
+\begin{figure}[h]
+	\begin{subfigure}{.45\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{{FIGURES/MFCQ/test10f7a3/test_3_mu_Qlearning}.pdf}
+	\end{subfigure}%
+	\begin{subfigure}{.45\columnwidth}
+		\centering 
+		\includegraphics[width=\columnwidth]{{FIGURES/MFCQ/test10f7a3/test_3_V_Qlearning}.pdf}
+	\end{subfigure}
+	\caption{平均场控制网络安全示例，测试情形 3：$m_0 = (0, 0, 0, 1)$。左图：分布 $m^{m_0}$ 在最优控制下（$m_{ODE}$）或使用近似 $Q$ 函数进行控制时（$m_Q$）的演化。右图：沿最优流的 $V$ 函数（$V_{opt}$）和近似 $Q$ 函数（$V_{Q}$）。}   
+ 	\label{AMS-num-fig:finiteMFCQ-cyber-Master-m0-3}
+\end{figure}
+
+
+
+
+
+\subsection{平均场博弈中的强化学习}
+
+
+由于平均场博弈是通常无法写成优化问题的定点问题，因此纳什均衡不能直接重写为马尔可夫决策过程（MDP）。当模型未知时，如何使用偏微分方程或前向--后向随机微分方程（FBSDE）系统等最优性条件并不明确。相反，回到定义~\eqref{AMS-num-eq:def-J-MFG}--\eqref{AMS-num-eq:dyn-X-general-MFG}，可以考虑迭代更新分布，并在每次迭代中利用强化学习求解一个典型参与者所面对的最优控制问题。这对应于如下情形：一个无穷小参与者可以观察给定的总体分布，并试图通过反复试错来学习其最优响应（\textit{即}，并不知道其依赖于平均场项的成本或演化是如何计算的）。这一步可以重写为由平均场项参数化的（标准）马尔可夫决策过程。与上述平均场控制的关键区别在于，当无穷小参与者学习其最优控制时，总体分布并不发生变化。随后，利用这一（近似）最优响应更新平均场项，如此继续。同样，分布的更新例如可以采用 Picard 型或虚拟博弈型。关于这些方法的更多细节，我们分别参见~\cite{guo2019learning} 和~\cite{Elie2020OnTC,perrin2020fictitious}；另见~\cite{subramanianpolicy}，其中给出了一种基于双时间尺度方法的不同方法。最后需要指出，尽管平均场博弈与平均场控制之间存在关键差异，但这些问题的强化学习算法可以通过上述双时间尺度方法得到统一：事实上，可以使用不同的学习率，同时学习值函数和分布，从而计算平均场博弈与平均场控制的解；更多细节参见~\cite{angiulifouquelauriere2020unified}。为简洁起见，此处不再展开讨论平均场博弈的强化学习。
+
+
+
+
+
+\clearpage
+
+\section{\bf 结论与展望}
+\label{sec:conclusion}
+
+
+
+我们介绍了平均场博弈和平均场控制问题数值方法的若干方面。除上述方法外，人们还研究了其他多个方向，例如（仅列举其中若干）：
+\begin{itemize}
+	\item McKean-Vlasov 随机微分方程前向--后向系统的方法：当系统解耦时，Chaudru de Raynal 和 Garcia Trillos 在~\cite{MR3322862} 中提出了一种用于 MKV 型 FBSDE 的求积方法；Chassagneux \textit{等人}在~\cite{MR3914553,Angiulietal-2019} 中提出了一种递归程序，而~\cite{fouque2019deep,carmona2019convergence2,germain2019numerical} 研究了其他基于神经网络逼近的方法，其中将 FBSDE 系统重新表述为两个前向 SDE 的最优控制问题，其成本函数是对不满足终端条件的惩罚；
+	\item 遍历平均场博弈的算法：在~\cite{MR3601001,MR3882530} 中，Cacace \textit{等人}提出了一种依赖于有限差分格式和最小二乘表述的方法，随后使用 Gauss-Newton 迭代进行求解； 
+	\item 用于平均场控制和变分平均场博弈的梯度型方法：关于其在群体运动或系统性风险中的应用，参见~\cite{LachapelleWolfram-2011-MFG-congestion-aversion, MR3501391,MR3619691}；
+	\item 专门针对总体分布具有非局部依赖性的平均场博弈的计算方法，例如使用 Fourier 展开技术~\cite{nurbekyan2019fourier}；
+	\item 除上述方法之外基于机器学习工具的方法：例如，~\cite{al2018solving,carmona2019convergence1} 研究了平均场博弈偏微分方程系统的神经网络方法，其中值函数和分布由两个神经网络代替，并按照 DGM 策略进行优化；~\cite{cao2020connecting} 研究了这一思想与生成对抗网络（GAN）之间的联系；另一方面，~\cite{ruthotto2020machine} 提出了一种用于平均场控制和变分平均场博弈的神经网络方法；
+	\item 除上述方法之外的学习或强化学习方法，例如策略梯度~\cite{subramanianpolicy}、序贯分解~\cite{mishra2020model}、演员--评论家方法~\cite{fu2019actor}、在线镜像下降~\cite{Hadikhanloo-phdthesis}、值迭代~\cite{anahtarci2019value} 或策略迭代~\cite{cacacecamilligoffi2020policy}；另见~\cite{tembine2012meanfieldlearning}；
+	\item 纯概率方法，例如针对一类平均场控制问题的量化方法或基于回归的方法~\cite{balata2019class}，或者 Bayraktar \textit{等人}在~\cite{MR3873029} 中研究的基于 Markov 链逼近的平均场博弈方法。
+\end{itemize}
+
+出于表述需要，这些讲义所采用的框架往往比文献所涵盖的框架限制更多且简单得多。感兴趣的读者可参阅全文引用的参考文献。然而，一些方面仍然具有挑战性，例如一般边界条件或一般扩散项（其可能依赖于控制并且可能是退化的），希望未来的工作能够对此加以解决。除了数值方法本身的发展之外，我们相信这些工具将推动经济学、机器人学、生物学或流行病学等领域的诸多应用。
+
+\vskip 6pt
+\noindent \textbf{致谢. } M. Lauri{\`e}re 非常感谢 Yves Achdou、Luis Brice\~{n}o-Arias、Ren\'e Carmona、Fran{\c c}ois Delarue、Francisco Silva 和 Xianjin Yang 所开展的富有成效的讨论，并感谢 AMS 短期课程的参与者提出的问题和评论。M. Lauri{\`e}re 感谢匿名审稿人富有洞见的评论和建议，这些意见帮助提升了本文的质量。
+M. Lauri\`ere 的研究得到了 NSF 项目 DMS--1716673 和 ARO 项目 W911NF--17--1--0578 的资助。
+
+
+
+
+
+\bibliographystyle{amsplain}
+\bibliography{mfg-num-bib2}
+
+
+
+\printindex\end{document}

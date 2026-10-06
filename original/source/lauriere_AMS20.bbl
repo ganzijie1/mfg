@@ -1,0 +1,567 @@
+\providecommand{\bysame}{\leavevmode\hbox to3em{\hrulefill}\thinspace}
+\providecommand{\MR}{\relax\ifhmode\unskip\space\fi MR }
+% \MRhref is called by the amsart/book/proc definition of \MR.
+\providecommand{\MRhref}[2]{%
+  \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2}
+}
+\providecommand{\href}[2]{#2}
+\begin{thebibliography}{100}
+
+\bibitem{MR3135339}
+Yves Achdou, \emph{Finite difference methods for mean field games},
+  Hamilton-{J}acobi equations: approximations, numerical analysis and
+  applications, Lecture Notes in Math., vol. 2074, Springer, Heidelberg, 2013,
+  pp.~1--47. \MR{3135339}
+
+\bibitem{MR2888257}
+Yves Achdou, Fabio Camilli, and Italo Capuzzo-Dolcetta, \emph{Mean field games:
+  numerical methods for the planning problem}, SIAM J. Control Optim.
+  \textbf{50} (2012), no.~1, 77--109. \MR{2888257}
+
+\bibitem{MR3097034}
+\bysame, \emph{Mean field games: convergence of a finite difference method},
+  SIAM J. Numer. Anal. \textbf{51} (2013), no.~5, 2585--2612. \MR{3097034}
+
+\bibitem{MR2679575}
+Yves Achdou and Italo Capuzzo-Dolcetta, \emph{Mean field games: numerical
+  methods}, SIAM J. Numer. Anal. \textbf{48} (2010), no.~3, 1136--1162.
+  \MR{2679575}
+
+\bibitem{achdouKobeissi2020mfgcfinitediff}
+Yves Achdou and Ziad Kobeissi, \emph{Mean field games of controls: Finite
+  difference approximations}, arXiv preprint arXiv:2003.03968 (2020).
+
+\bibitem{YAJML}
+Yves Achdou and Jean-Michel Lasry, \emph{Mean field games for modeling crowd
+  motion}, Contributions to Partial Differential Equations and Applications,
+  Springer International Publishing, 2019, pp.~17--42.
+
+\bibitem{MR3392611}
+Yves Achdou and Mathieu Lauri\`ere, \emph{On the system of partial differential
+  equations arising in mean field type control}, Discrete Contin. Dyn. Syst.
+  \textbf{35} (2015), no.~9, 3879--3900. \MR{3392611}
+
+\bibitem{MR3498932}
+Yves Achdou and Mathieu Lauri{\`e}re, \emph{Mean {F}ield {T}ype {C}ontrol with
+  {C}ongestion}, Appl. Math. Optim. \textbf{73} (2016), no.~3, 393--418.
+  \MR{3498932}
+
+\bibitem{MR3575615}
+\bysame, \emph{Mean {F}ield {T}ype {C}ontrol with {C}ongestion ({II}): {A}n
+  augmented {L}agrangian method}, Appl. Math. Optim. \textbf{74} (2016), no.~3,
+  535--578. \MR{3575615}
+
+\bibitem{achdoulauriere-2020-mfg-numerical}
+\bysame, \emph{Mean field games and applications: Numerical aspects}, Mean
+  Field Games, C.I.M.E. Foundation Subseries, vol. 2281, Springer International
+  Publishing, 2020.
+
+\bibitem{achdoulaurierelions2020optimal}
+Yves Achdou, Mathieu Lauri{\`e}re, and Pierre-Louis Lions, \emph{Optimal
+  control of conditioned processes with feedback controls}, Journal de
+  Math{\'e}matiques Pures et Appliqu{\'e}es (2020).
+
+\bibitem{MR2928376}
+Yves Achdou and Victor Perez, \emph{Iterative strategies for solving linearized
+  discrete mean field games systems}, Netw. Heterog. Media \textbf{7} (2012),
+  no.~2, 197--217. \MR{2928376}
+
+\bibitem{MR3452251}
+Yves Achdou and Alessio Porretta, \emph{Convergence of a finite difference
+  scheme to weak solutions of the system of partial differential equations
+  arising in mean field games}, SIAM J. Numer. Anal. \textbf{54} (2016), no.~1,
+  161--186. \MR{3452251}
+
+\bibitem{MR3765549}
+\bysame, \emph{Mean field games with congestion}, Ann. Inst. H. Poincar\'{e}
+  Anal. Non Lin\'{e}aire \textbf{35} (2018), no.~2, 443--480. \MR{3765549}
+
+\bibitem{agram2020deep}
+Nacira Agram, Azzeddine Bakdi, and Bernt Oksendal, \emph{Deep learning and
+  stochastic mean-field control for a neural network model}, Available at SSRN
+  3639022 (2020).
+
+\bibitem{al2018solving}
+Ali Al-Aradi, Adolfo Correia, Danilo Naiff, Gabriel Jardim, and Yuri Saporito,
+  \emph{Solving nonlinear and high-dimensional partial differential equations
+  via deep learning}, arXiv preprint arXiv:1811.08782 (2018).
+
+\bibitem{MR3698446}
+Noha Almulla, Rita Ferreira, and Diogo Gomes, \emph{Two numerical approaches to
+  stationary mean-field games}, Dyn. Games Appl. \textbf{7} (2017), no.~4,
+  657--682. \MR{3698446}
+
+\bibitem{anahtarci2019value}
+Berkay Anahtarci, Can~Deha Kariksiz, and Naci Saldi, \emph{Value iteration
+  algorithm for mean-field games}, arXiv preprint arXiv:1909.01758 (2019).
+
+\bibitem{MR2784835}
+Daniel Andersson and Boualem Djehiche, \emph{A maximum principle for {SDE}s of
+  mean-field type}, Appl. Math. Optim. \textbf{63} (2011), no.~3, 341--356.
+  \MR{2784835}
+
+\bibitem{MR3731033}
+Roman Andreev, \emph{Preconditioning the augmented {L}agrangian method for
+  instationary mean field games with diffusion}, SIAM J. Sci. Comput.
+  \textbf{39} (2017), no.~6, A2763--A2783. \MR{3731033}
+
+\bibitem{angiulifouquelauriere2020unified}
+Andrea Angiuli, Jean-Pierre Fouque, and Mathieu Lauri{\`e}re, \emph{Unified
+  reinforcement {Q}-learning for mean field game and control problems}, arXiv
+  preprint arXiv:2006.13912 (2020).
+
+\bibitem{Angiulietal-2019}
+Andrea Angiuli, Christy~V. Graves, Houzhi Li, Jean-Fran\c{c}ois Chassagneux,
+  Fran\c{c}ois Delarue, and Ren\'e Carmona, \emph{Cemracs 2017: numerical
+  probabilistic approach to mfg}, ESAIM: ProcS \textbf{65} (2019), 84--113.
+
+\bibitem{MR3763083}
+Alexander Aurell and Boualem Djehiche, \emph{Mean-field type modeling of
+  nonlocal crowd aversion in pedestrian crowd dynamics}, SIAM J. Control Optim.
+  \textbf{56} (2018), no.~1, 434--455. \MR{3763083}
+
+\bibitem{balata2019class}
+Alessandro Balata, C{\^o}me Hur{\'e}, Mathieu Lauri{\`e}re, Huy{\^e}n Pham, and
+  Isaque Pimentel, \emph{A class of finite-dimensional numerically solvable
+  {M}c{K}ean-{V}lasov control problems}, ESAIM: Proceedings and Surveys
+  \textbf{65} (2019), 114--144.
+
+\bibitem{MR3873029}
+Erhan Bayraktar, Amarjit Budhiraja, and Asaf Cohen, \emph{A numerical scheme
+  for a mean field game in some queueing systems based on {M}arkov chain
+  approximation method}, SIAM J. Control Optim. \textbf{56} (2018), no.~6,
+  4017--4044. \MR{3873029}
+
+\bibitem{MR3739204}
+Erhan Bayraktar, Andrea Cosso, and Huy\^{e}n Pham, \emph{Randomized dynamic
+  programming principle and {F}eynman-{K}ac representation for optimal control
+  of {M}c{K}ean-{V}lasov dynamics}, Trans. Amer. Math. Soc. \textbf{370}
+  (2018), no.~3, 2115--2160. \MR{3739204}
+
+\bibitem{MR1738163}
+Jean-David Benamou and Yann Brenier, \emph{A computational fluid mechanics
+  solution to the {M}onge-{K}antorovich mass transfer problem}, Numer. Math.
+  \textbf{84} (2000), no.~3, 375--393. \MR{1738163}
+
+\bibitem{MR3395203}
+Jean-David Benamou and Guillaume Carlier, \emph{Augmented {L}agrangian methods
+  for transport optimization, mean field games and degenerate elliptic
+  equations}, J. Optim. Theory Appl. \textbf{167} (2015), no.~1, 1--26.
+  \MR{3395203}
+
+\bibitem{MR3644590}
+Jean-David Benamou, Guillaume Carlier, and Filippo Santambrogio,
+  \emph{Variational mean field games}, Active particles. {V}ol. 1. {A}dvances
+  in theory, models, and applications, Model. Simul. Sci. Eng. Technol.,
+  Birkh\"{a}user/Springer, Cham, 2017, pp.~141--171. \MR{3644590}
+
+\bibitem{MR3134900}
+Alain Bensoussan, Jens Frehse, and Sheung Chi~Phillip Yam, \emph{Mean field
+  games and mean field type control theory}, Springer Briefs in Mathematics,
+  Springer, New York, 2013.
+
+\bibitem{MR3652408}
+\bysame, \emph{On the interpretation of the {M}aster {E}quation}, Stochastic
+  Process. Appl. \textbf{127} (2017), no.~7, 2093--2137. \MR{3652408}
+
+\bibitem{MR3797719}
+L\'{e}on Bottou, Frank~E. Curtis, and Jorge Nocedal, \emph{Optimization methods
+  for large-scale machine learning}, SIAM Rev. \textbf{60} (2018), no.~2,
+  223--311. \MR{3797719}
+
+\bibitem{BricenoAriasetalCEMRACS2017}
+Luis~M. Brice\~no Arias, Dante Kalise, Ziad Kobeissi, Mathieu Lauri\`ere,
+  \'Alvaro Mateos~Gonz\'alez, and Francisco~J. Silva, \emph{On the
+  implementation of a primal-dual algorithm for second order time-dependent
+  mean field games with local couplings}, ESAIM: ProcS \textbf{65} (2019),
+  330--348.
+
+\bibitem{MR3772008}
+Luis~M. Brice\~{n}o Arias, Dante Kalise, and Francisco~J. Silva, \emph{Proximal
+  methods for stationary mean field games with local couplings}, SIAM J.
+  Control Optim. \textbf{56} (2018), no.~2, 801--836. \MR{3772008}
+
+\bibitem{MR3882530}
+Simone Cacace, Fabio Camilli, Annalisa Cesaroni, and Claudio Marchi, \emph{An
+  ergodic problem for mean field games: qualitative properties and numerical
+  simulations}, Minimax Theory Appl. \textbf{3} (2018), no.~2, 211--226.
+  \MR{3882530}
+
+\bibitem{cacacecamilligoffi2020policy}
+Simone Cacace, Fabio Camilli, and Alessandro Goffi, \emph{A policy iteration
+  method for mean field games}, arXiv preprint arXiv:2007.04818 (2020).
+
+\bibitem{MR3601001}
+Simone Cacace, Fabio Camilli, and Claudio Marchi, \emph{A numerical method for
+  mean field games on networks}, ESAIM Math. Model. Numer. Anal. \textbf{51}
+  (2017), no.~1, 63--88. \MR{3601001}
+
+\bibitem{CHM-2017-survey}
+Peter~E. Caines, Minyi Huang, and Roland~P. Malham{\'e}, \emph{Handbook of
+  dynamic game theory, t. basar and g. zaccour (eds.)}, Springer, Cham, 2017.
+
+\bibitem{camilli2020approximation-timefrac}
+Fabio Camilli, Serikbolsyn Duisembay, and Qing Tang, \emph{Approximation of an
+  optimal control problem for the time-fractional fokker-planck equation},
+  arXiv preprint arXiv:2006.03518 (2020).
+
+\bibitem{cao2020connecting}
+Haoyang Cao, Xin Guo, and Mathieu Lauri{\`e}re, \emph{Connecting gans and
+  mfgs}, arXiv preprint arXiv:2002.04112 (2020).
+
+\bibitem{Cardaliaguet-2013-notes}
+Pierre Cardaliaguet, \emph{Notes on mean field games}, 2013.
+
+\bibitem{MR3967062}
+Pierre Cardaliaguet, Fran\c{c}ois Delarue, Jean-Michel Lasry, and Pierre-Louis
+  Lions, \emph{The master equation and the convergence problem in mean field
+  games}, Annals of Mathematics Studies, vol. 201, Princeton University Press,
+  Princeton, NJ, 2019. \MR{3967062}
+
+\bibitem{MR3358627}
+Pierre Cardaliaguet and P.~Jameson Graber, \emph{Mean field games systems of
+  first order}, ESAIM Control Optim. Calc. Var. \textbf{21} (2015), no.~3,
+  690--722. \MR{3358627}
+
+\bibitem{MR3399179}
+Pierre Cardaliaguet, P.~Jameson Graber, Alessio Porretta, and Daniela Tonon,
+  \emph{Second order mean field games with degenerate diffusion and local
+  coupling}, NoDEA Nonlinear Differential Equations Appl. \textbf{22} (2015),
+  no.~5, 1287--1317. \MR{3399179}
+
+\bibitem{MR3608094}
+Pierre Cardaliaguet and Saeed Hadikhanloo, \emph{Learning in mean field games:
+  the fictitious play}, ESAIM Control Optim. Calc. Var. \textbf{23} (2017),
+  no.~2, 569--591. \MR{3608094}
+
+\bibitem{MR3556062}
+Pierre Cardaliaguet, Alp\'{a}r~R. M\'{e}sz\'{a}ros, and Filippo Santambrogio,
+  \emph{First order mean field games with density constraints: pressure equals
+  price}, SIAM J. Control Optim. \textbf{54} (2016), no.~5, 2672--2709.
+  \MR{3556062}
+
+\bibitem{MR3148086}
+Elisabetta Carlini and Francisco~J. Silva, \emph{A fully discrete
+  semi-{L}agrangian scheme for a first order mean field game problem}, SIAM J.
+  Numer. Anal. \textbf{52} (2014), no.~1, 45--67. \MR{3148086}
+
+\bibitem{MR3392626}
+\bysame, \emph{A semi-{L}agrangian scheme for a degenerate second order mean
+  field game system}, Discrete Contin. Dyn. Syst. \textbf{35} (2015), no.~9,
+  4269--4292. \MR{3392626}
+
+\bibitem{MR3828859}
+\bysame, \emph{On the discretization of some nonlinear
+  {F}okker-{P}lanck-{K}olmogorov equations and applications}, SIAM J. Numer.
+  Anal. \textbf{56} (2018), no.~4, 2148--2177. \MR{3828859}
+
+\bibitem{carmona-AMS-tmp}
+Ren\'e Carmona, \emph{Applications of mean field games to economic theory},
+  Proc. AMS Short Course, arXiv preprint arXiv:2012.05237 (2020).
+
+\bibitem{MR3395471}
+Ren\'{e} Carmona and Fran\c{c}ois Delarue, \emph{Forward-backward stochastic
+  differential equations and controlled {M}c{K}ean-{V}lasov dynamics}, Ann.
+  Probab. \textbf{43} (2015), no.~5, 2647--2700. \MR{3395471}
+
+\bibitem{MR3752669}
+\bysame, \emph{Probabilistic theory of mean field games with applications.
+  {I}}, Probability Theory and Stochastic Modelling, vol.~83, Springer, Cham,
+  2018, Mean field FBSDEs, control, and games. \MR{3752669}
+
+\bibitem{MR3753660}
+\bysame, \emph{Probabilistic theory of mean field games with applications.
+  {II}}, Probability Theory and Stochastic Modelling, vol.~84, Springer, Cham,
+  2018, Mean field games with common noise and master equations. \MR{3753660}
+
+\bibitem{MR3968548}
+Ren\'{e} Carmona, Christy~V. Graves, and Zongjun Tan, \emph{Price of anarchy
+  for mean field games}, C{EMRACS} 2017---numerical methods for stochastic
+  models: control, uncertainty quantification, mean-field, ESAIM Proc. Surveys,
+  vol.~65, EDP Sci., Les Ulis, 2019, pp.~349--383. \MR{3968548}
+
+\bibitem{carmona2019convergence2}
+Ren{\'e} Carmona and Mathieu Lauri{\`e}re, \emph{Convergence analysis of
+  machine learning algorithms for the numerical solution of mean field control
+  and games: Ii--the finite horizon case}, arXiv preprint arXiv:1908.01613
+  (2019).
+
+\bibitem{carmona2019convergence1}
+\bysame, \emph{Convergence analysis of machine learning algorithms for the
+  numerical solution of mean field control and games: {I}--the ergodic case},
+  To appear in SIAM Journal on Numerical Analysis (2021).
+
+\bibitem{carmona2019linear}
+Ren{\'e} Carmona, Mathieu Lauri{\`e}re, and Zongjun Tan, \emph{Linear-quadratic
+  mean-field reinforcement learning: convergence of policy gradient methods},
+  arXiv preprint arXiv:1910.04295 (2019).
+
+\bibitem{carmona2019model}
+\bysame, \emph{Model-free mean-field reinforcement learning: mean-field {MDP}
+  and mean-field {Q}-learning}, arXiv preprint arXiv:1910.12802 (2019).
+
+\bibitem{MR3981375}
+Alekos Cecchin, Paolo Dai~Pra, Markus Fischer, and Guglielmo Pelino, \emph{On
+  the convergence problem in mean field games: a two state model without
+  uniqueness}, SIAM J. Control Optim. \textbf{57} (2019), no.~4, 2443--2466.
+  \MR{3981375}
+
+\bibitem{MR2782122}
+Antonin Chambolle and Thomas Pock, \emph{A first-order primal-dual algorithm
+  for convex problems with applications to imaging}, J. Math. Imaging Vision
+  \textbf{40} (2011), no.~1, 120--145. \MR{2782122}
+
+\bibitem{MR3914553}
+Jean-Fran\c{c}ois Chassagneux, Dan Crisan, and Fran\c{c}ois Delarue,
+  \emph{Numerical method for {FBSDE}s of {M}c{K}ean-{V}lasov type}, Ann. Appl.
+  Probab. \textbf{29} (2019), no.~3, 1640--1684. \MR{3914553}
+
+\bibitem{MR3322862}
+Paul-Eric Chaudru~de Raynal and Camilo~A. Garcia~Trillos, \emph{A cubature
+  based algorithm to solve decoupled {M}c{K}ean-{V}lasov forward-backward
+  stochastic differential equations}, Stochastic Process. Appl. \textbf{125}
+  (2015), no.~6, 2206--2255. \MR{3322862}
+
+\bibitem{delarue-AMS-tmp}
+Fran\c{c}ois Delarue, \emph{Master equation and mean field games}, Proc. AMS
+  Short Course (2020).
+
+\bibitem{MR4079435}
+Fran\c{c}ois Delarue, Daniel Lacker, and Kavita Ramanan, \emph{From the master
+  equation to mean field game limit theory: large deviations and concentration
+  of measure}, Ann. Probab. \textbf{48} (2020), no.~1, 211--263. \MR{4079435}
+
+\bibitem{djete2019mckean}
+Mao~Fabrice Djete, Dylan Possama{\"\i}, and Xiaolu Tan, \emph{{McKean-Vlasov}
+  optimal control: the dynamic programming principle}, arXiv preprint
+  arXiv:1907.08860 (2019).
+
+\bibitem{MR3736669}
+Weinan E, Jiequn Han, and Arnulf Jentzen, \emph{Deep learning-based numerical
+  methods for high-dimensional parabolic partial differential equations and
+  backward stochastic differential equations}, Commun. Math. Stat. \textbf{5}
+  (2017), no.~4, 349--380. \MR{3736669}
+
+\bibitem{MR1168183}
+Jonathan Eckstein and Dimitri~P. Bertsekas, \emph{On the {D}ouglas-{R}achford
+  splitting method and the proximal point algorithm for maximal monotone
+  operators}, Math. Programming \textbf{55} (1992), no.~3, Ser. A, 293--318.
+  \MR{1168183}
+
+\bibitem{Elie2020OnTC}
+Romuald Elie, Julien P{\'e}rolat, Mathieu Lauri{\`e}re, Matthieu Geist, and
+  Olivier Pietquin, \emph{On the convergence of model free learning in mean
+  field games}, AAAI, 2020.
+
+\bibitem{MR724072}
+Michel Fortin and Roland Glowinski, \emph{Augmented {L}agrangian methods},
+  Studies in Mathematics and its Applications, vol.~15, North-Holland
+  Publishing Co., Amsterdam, 1983, Applications to the numerical solution of
+  boundary value problems, Translated from the French by B. Hunt and D. C.
+  Spicer. \MR{724072}
+
+\bibitem{fouque2019deep}
+Jean-Pierre Fouque and Zhaoyu Zhang, \emph{Deep learning methods for mean field
+  control problems with delay}, Frontiers in Applied Mathematics and Statistics
+  \textbf{6(11)} (2020).
+
+\bibitem{fu2019actor}
+Zuyue Fu, Zhuoran Yang, Yongxin Chen, and Zhaoran Wang, \emph{Actor-critic
+  provably finds nash equilibria of linear-quadratic mean-field games}, arXiv
+  preprint arXiv:1910.07498 (2019).
+
+\bibitem{MR2968782}
+Nicolas Gast, Bruno Gaujal, and Jean-Yves Le~Boudec, \emph{Mean field for
+  {M}arkov decision processes: from discrete to continuous optimization}, IEEE
+  Trans. Automat. Control \textbf{57} (2012), no.~9, 2266--2280. \MR{2968782}
+
+\bibitem{germain2019numerical}
+Maximilien Germain, Joseph Mikael, and Xavier Warin, \emph{Numerical resolution
+  of mckean-vlasov fbsdes using neural networks}, arXiv preprint
+  arXiv:1909.12678 (2019).
+
+\bibitem{MR2137498}
+Emmanuel Gobet and R\'{e}mi Munos, \emph{Sensitivity analysis using
+  {I}t\^{o}-{M}alliavin calculus and martingales, and application to stochastic
+  optimal control}, SIAM J. Control Optim. \textbf{43} (2005), no.~5,
+  1676--1713. \MR{2137498}
+
+\bibitem{MR3559742}
+Diogo~A. Gomes, Edgard~A. Pimentel, and Vardan Voskanyan, \emph{Regularity
+  theory for mean-field game systems}, SpringerBriefs in Mathematics, Springer,
+  [Cham], 2016. \MR{3559742}
+
+\bibitem{MR3195844}
+Diogo~A. Gomes and Jo\~{a}o Sa\'{u}de, \emph{Mean field games models---a brief
+  survey}, Dyn. Games Appl. \textbf{4} (2014), no.~2, 110--154. \MR{3195844}
+
+\bibitem{GomesSaude2018}
+Diogo~A. Gomes and Jo{\~a}o Sa{\'u}de, \emph{Numerical methods for finite-state
+  mean-field games satisfying a monotonicity condition}, Applied Mathematics
+  {\&} Optimization (2018).
+
+\bibitem{GomesYang2018hessian}
+{Gomes, Diogo A.} and {Yang, Xianjin}, \emph{The hessian riemannian flow and
+  newton\'{}s method for effective hamiltonians and mather measures}, ESAIM:
+  M2AN \textbf{54} (2020), no.~6, 1883--1915.
+
+\bibitem{gravesmalhame-AMS-tmp}
+Christy Graves and Roland~P. Malham{\'e}, \emph{Mean field games : A paradigm
+  for individual-mass interactions}, Proc. AMS Short Course (2020).
+
+\bibitem{gu2019dynamic}
+Haotian Gu, Xin Guo, Xiaoli Wei, and Renyuan Xu, \emph{Dynamic programming
+  principles for learning {MFCs}}, arXiv preprint arXiv:1911.07314 (2019).
+
+\bibitem{gu2020qlearning}
+\bysame, \emph{Mean-field controls with {Q}-learning for cooperative {MARL}:
+  Convergence and complexity analysis}, arXiv preprint arXiv:2002.04131 (2020).
+
+\bibitem{guo2019learning}
+Xin Guo, Anran Hu, Renyuan Xu, and Junzi Zhang, \emph{Learning mean-field
+  games}, in proc. of NeurIPS, 2019.
+
+\bibitem{Hadikhanloo-phdthesis}
+Saeed Hadikhanloo, \emph{Learning in mean field games}, Ph.D. thesis,
+  University Paris-Dauphine, 2018.
+
+\bibitem{MR4030259}
+Saeed Hadikhanloo and Francisco~J. Silva, \emph{Finite mean field games:
+  fictitious play and convergence to a first order continuous mean field game},
+  J. Math. Pures Appl. (9) \textbf{132} (2019), 369--397. \MR{4030259}
+
+\bibitem{han2016deep-googlecitations}
+Jiequn Han and Weinan E, \emph{Deep learning approximation for stochastic
+  control problems}, Deep Reinforcement Learning Workshop, NIPS, arXiv preprint
+  arXiv:1611.07422 (2016).
+
+\bibitem{MR2352434}
+Minyi Huang, Peter~E. Caines, and Roland~P. Malham\'e, \emph{Large-population
+  cost-coupled {LQG} problems with nonuniform agents: individual-mass behavior
+  and decentralized {$\epsilon$}-{N}ash equilibria}, IEEE Trans. Automat.
+  Control \textbf{52} (2007), no.~9, 1560--1571. \MR{2352434}
+
+\bibitem{MR2346927}
+Minyi Huang, Roland~P. Malham{\'e}, and Peter~E. Caines, \emph{Large population
+  stochastic dynamic games: closed-loop {M}c{K}ean-{V}lasov systems and the
+  {N}ash certainty equivalence principle}, Commun. Inf. Syst. \textbf{6}
+  (2006), no.~3, 221--251. \MR{2346927}
+
+\bibitem{MR3575619}
+Vassili~N. Kolokoltsov and Alain Bensoussan, \emph{Mean-field-game model for
+  botnet defense in cyber-security}, Appl. Math. Optim. \textbf{74} (2016),
+  no.~3, 669--692. \MR{3575619}
+
+\bibitem{LachapelleWolfram-2011-MFG-congestion-aversion}
+Aim{\'e} Lachapelle and Marie-Therese Wolfram, \emph{On a mean field game
+  approach modeling congestion and aversion in pedestrian crowds},
+  Transportation research part B: methodological \textbf{45} (2011), no.~10,
+  1572--1589.
+
+\bibitem{lacker-AMS-tmp}
+Daniel Lacker, \emph{Notes for the {AMS} short course on mean field games: The
+  convergence problem}, Proc. AMS Short Course (2020).
+
+\bibitem{MR2269875}
+Jean-Michel Lasry and Pierre-Louis Lions, \emph{Jeux \`a champ moyen. {I}. {L}e
+  cas stationnaire}, C. R. Math. Acad. Sci. Paris \textbf{343} (2006), no.~9,
+  619--625. \MR{2269875}
+
+\bibitem{MR2271747}
+\bysame, \emph{Jeux \`a champ moyen. {II}. {H}orizon fini et contr\^ole
+  optimal}, C. R. Math. Acad. Sci. Paris \textbf{343} (2006), no.~10, 679--684.
+  \MR{2271747}
+
+\bibitem{MR2295621}
+\bysame, \emph{Mean field games}, Jpn. J. Math. \textbf{2} (2007), no.~1,
+  229--260. \MR{2295621}
+
+\bibitem{MR3258261}
+Mathieu Lauri{\`e}re and Olivier Pironneau, \emph{Dynamic programming for
+  mean-field type control}, C. R. Math. Acad. Sci. Paris \textbf{352} (2014),
+  no.~9, 707--713. \MR{3258261}
+
+\bibitem{MR3501391}
+\bysame, \emph{Dynamic programming for mean-field type control}, J. Optim.
+  Theory Appl. \textbf{169} (2016), no.~3, 902--924. \MR{3501391}
+
+\bibitem{PLL-CDF}
+Pierre-Louis Lions, \emph{Cours du {C}oll{\`e}ge de {F}rance},
+  \url{https://www.college-de-france.fr/site/en-pierre-louis-lions/_course.htm},
+  2007-2011.
+
+\bibitem{MR3420414}
+Alp\'{a}r~Rich\'{a}rd M\'{e}sz\'{a}ros and Francisco~J. Silva, \emph{A
+  variational approach to second order mean field games with density
+  constraints: the stationary case}, J. Math. Pures Appl. (9) \textbf{104}
+  (2015), no.~6, 1135--1159. \MR{3420414}
+
+\bibitem{mishra2020model}
+Rajesh~K Mishra, Deepanshu Vasal, and Sriram Vishwanath, \emph{Model-free
+  reinforcement learning for non-stationary mean field games}, 2020 59th IEEE
+  Conference on Decision and Control (CDC), IEEE, 2020, pp.~1032--1037.
+
+\bibitem{motte2019mean}
+M{\'e}d{\'e}ric Motte and Huy{\^e}n Pham, \emph{Mean-field markov decision
+  processes with common noise and open-loop controls}, arXiv preprint
+  arXiv:1912.07883 (2019).
+
+\bibitem{nurbekyan2019fourier}
+Levon Nurbekyan et~al., \emph{Fourier approximation methods for first-order
+  nonlocal mean-field games}, Portugaliae Mathematica \textbf{75} (2019),
+  no.~3, 367--396.
+
+\bibitem{MR4133380}
+Marcel Nutz and Yuchong Zhang, \emph{Conditional optimal stopping: a
+  time-inconsistent optimization}, Ann. Appl. Probab. \textbf{30} (2020),
+  no.~4, 1669--1692. \MR{4133380}
+
+\bibitem{parisini1996neural}
+Thomas Parisini and R~Zoppoli, \emph{Neural approximations for multistage
+  optimal control of nonlinear stochastic systems}, IEEE Transactions on
+  Automatic Control \textbf{41} (1996), no.~6, 889--895.
+
+\bibitem{perrin2020fictitious}
+Sarah Perrin, Julien P{\'e}rolat, Mathieu Lauri{\`e}re, Matthieu Geist, Romuald
+  Elie, and Olivier Pietquin, \emph{Fictitious play for mean field games:
+  Continuous time analysis and applications}, in proc. of NeurIPS, 2020.
+
+\bibitem{MR3619691}
+Laurent Pfeiffer, \emph{Numerical methods for mean-field type optimal control
+  problems}, Pure Appl. Funct. Anal. \textbf{1} (2016), no.~4, 629--655.
+  \MR{3619691}
+
+\bibitem{MR3631380}
+Huy\^en Pham and Xiaoli Wei, \emph{Dynamic programming for optimal control of
+  stochastic {M}c{K}ean-{V}lasov dynamics}, SIAM J. Control Optim. \textbf{55}
+  (2017), no.~2, 1069--1101. \MR{3631380}
+
+\bibitem{ramanan-AMS-tmp}
+Kavita Ramanan, \emph{Deviations and fluctuations for mean field games}, Proc.
+  AMS Short Course (2020).
+
+\bibitem{MR1451876}
+R.~Tyrrell Rockafellar, \emph{Convex analysis}, Princeton Landmarks in
+  Mathematics, Princeton University Press, Princeton, NJ, 1997, Reprint of the
+  1970 original, Princeton Paperbacks.
+
+\bibitem{ruthotto2020machine}
+Lars Ruthotto, Stanley~J Osher, Wuchen Li, Levon Nurbekyan, and Samy~Wu Fung,
+  \emph{A machine learning framework for solving high-dimensional mean field
+  game and mean field control problems}, Proceedings of the National Academy of
+  Sciences \textbf{117} (2020), no.~17, 9183--9193.
+
+\bibitem{MR3874585}
+Justin Sirignano and Konstantinos Spiliopoulos, \emph{D{GM}: a deep learning
+  algorithm for solving partial differential equations}, J. Comput. Phys.
+  \textbf{375} (2018), 1339--1364. \MR{3874585}
+
+\bibitem{subramanianpolicy}
+Jayakumar Subramanian and Aditya Mahajan, \emph{Reinforcement learning in
+  stationary mean-field games}, in proc. of AAMAS, 2019.
+
+\bibitem{tembine2012meanfieldlearning}
+Hamidou Tembine, Raul Tempone, and Pedro Vilanova, \emph{Mean-field learning: a
+  survey}, arXiv preprint arXiv:1210.4657 (2012).
+
+\end{thebibliography}

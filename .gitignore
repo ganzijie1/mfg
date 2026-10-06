@@ -1,0 +1,9 @@
+*.aux
+*.ilg
+*.ind
+*.idx
+*.log
+*.out
+*.toc
+*.synctex.gz
+preview_*.png
